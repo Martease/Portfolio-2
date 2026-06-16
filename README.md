@@ -1,6 +1,6 @@
 # Portfolio-2
 Personal project portfolio. A showcase of web development projects, skills, and professional services.
-# [Your Name] | Portfolio & Digital Hub
+# Martease | Portfolio & Digital Hub
 
 Welcome to my professional portfolio. This project serves as my "Digital HQ" as I transition from a background in trade services and entrepreneurship into a career in software engineering.
 
