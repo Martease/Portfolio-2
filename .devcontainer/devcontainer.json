@@ -1,0 +1,11 @@
+{
+  "name": "Portfolio-2 Dev Environment",
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite Preview",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  }
+}
