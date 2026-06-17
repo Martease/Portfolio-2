@@ -8,13 +8,14 @@ import Accomplishments from './pages/Accomplishments';
 import Contact from './pages/Contact';
 import Header from './components/Header'; // Keep Header/Footer here so they appear on all pages
 
+
 function App() {
   return (
     <Router>
       <div className="font-sans">
         <Header />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
           <Route path="/portfolio" element={<Portfolio />} />
