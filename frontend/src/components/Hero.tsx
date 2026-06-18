@@ -9,7 +9,7 @@ const Hero: React.FC = () => {
       <div className="home-text">
         <img 
           src="/src/assets/images/Background.png.jpeg" 
-          className="block mx-auto w-60 h-auto rounded-[70px] p-2.5 mt-[-20px]" 
+          className="block mx-auto w-32 h-auto rounded-[70px] p-2.5 mt-[-20px]" 
           alt="Background" 
         />
       </div>

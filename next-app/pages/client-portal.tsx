@@ -1,7 +1,7 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
+const API_BASE = '/api'
 
 export default function ClientPortal() {
   const { data: session, status } = useSession()

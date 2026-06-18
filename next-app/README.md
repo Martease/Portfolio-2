@@ -23,4 +23,4 @@ npm run dev
 Notes:
 - This scaffolding uses a Credentials provider with a demo user (`client@example.com` / `secret`). Replace with Clerk or another provider for production.
 - Replace stubbed contract data by fetching from your backend API.
-- Later steps will add Stripe Payment Links and webhooks on your FastAPI backend.
+- Later steps will add Stripe Payment Links and webhooks to the Next.js API backend.

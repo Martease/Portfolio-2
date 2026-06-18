@@ -1,26 +1,55 @@
 # Portfolio-2
-Personal project portfolio. A showcase of web development projects, skills, and professional services.
-# Martease | Portfolio & Digital Hub
-
-Welcome to my professional portfolio. This project serves as my "Digital HQ" as I transition from a background in trade services and entrepreneurship into a career in software engineering.
+Personal portfolio and client portal built with a single Next.js application.
 
 ## 🚀 Purpose
-This repository showcases my development journey, projects, and professional services. It is architected for scalability, starting with a clean React/TypeScript front-end and designed to integrate with a robust cloud-based backend.
+This repository demonstrates a full-stack Next.js setup with frontend pages, API routes, Stripe payment links, and PostgreSQL-backed data persistence.
 
 ## 🛠 Tech Stack
-- **Frontend:** React, TypeScript, Tailwind CSS
-- **Tooling:** Vite, GitHub Codespaces
-- **Architecture:** Organized with a PALA (Projects, Actions, Learning, Archives) mindset.
+- **Application:** Next.js, React, TypeScript
+- **Styling:** Tailwind CSS
+- **Backend:** Next.js API routes, PostgreSQL
+- **Payments:** Stripe Payment Links + webhooks
+- **Authentication:** NextAuth with credential provider for demo
 
 ## 📁 Project Structure
-- `src/components`: Reusable UI components.
-- `src/pages`: High-level views (Portfolio, Services, Contact, etc.).
-- `src/services`: Future home for API integrations and backend communication.
+- `pages/`: UI pages and API routes
+- `pages/api/`: backend routes for contracts and Stripe webhooks
+- `lib/`: database helpers and contract data layer
+- `styles/`: global and component style files
 
-## 📈 Roadmap
-- [ ] Finalize initial front-end build.
-- [ ] Integrate backend (FastAPI/SQL/AWS).
-- [ ] Launch production site.
+## ⚙️ Setup
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Set environment variables:
+   - `DATABASE_URL`
+   - `STRIPE_API_KEY`
+   - `STRIPE_WEBHOOK_SECRET`
+   - `NEXTAUTH_SECRET`
+   - `NEXTAUTH_URL` (e.g. `http://localhost:3000`)
+   - `BACK_OFFICE_PASSCODE` (owner passcode for `/back-office`)
+   - `GOOGLE_SERVICE_ACCOUNT_EMAIL` (for Google Docs/Drive API service account)
+   - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (service account private key)
+   - `GOOGLE_DOCS_TEMPLATE_ID` (template document ID)
+   - `GOOGLE_DRIVE_FOLDER_ID` (destination folder for generated docs)
+3. Initialize the database:
+   ```bash
+   npm run db:init
+   ```
+4. Start the app:
+   ```bash
+   npm run dev
+   ```
+
+## 💳 Stripe Support
+This app supports Stripe Payment Links and webhook handling through:
+- `pages/api/contracts/[contractId]/create-payment-link.ts`
+- `pages/api/webhooks/stripe.ts`
+
+## 📈 Notes
+- The database is PostgreSQL and is initialized automatically by `npm run db:init`.
+- The client portal uses Next.js API routes directly, so frontend and backend are in one project.
 
 ---
-*Built with passion as part of my career transition into backend development and cloud architecture.*
+*Built with a clean full-stack Next.js architecture for portfolio and payment workflows.*
