@@ -1,27 +1,25 @@
-import handy from "../assets/images/Handy logo.PNG";
-import agency from "../assets/images/Agency group.png";
-import websiteUpdate from "../assets/images/Website update 2.png";
-
 const portfolioItems = [
   {
     title: 'Multi-Page Website',
     description: 'A polished multi-page portfolio site with responsive design.',
     href: 'https://handyservant.netlify.app/',
-    image: handy,
+    imageName: 'Handy logo.PNG',
   },
   {
     title: 'Agency Landing Page',
     description: 'A modern landing page designed for creative agencies.',
-    href: '#contact',
-    image: agency,
+    href: 'https://avertinglanding.netlify.app/',
+    imageName: 'Agency group.png',
   },
   {
     title: 'Website Refresh',
     description: 'A clean redesign to improve site performance and polish.',
     href: '#contact',
-    image: websiteUpdate,
+    imageName: 'Website update 2.png',
   },
 ];
+
+const buildImageUrl = (name: string) => `/assets/images/${encodeURIComponent(name)}`;
 
 export default function Portfolio() {
   return (
@@ -45,7 +43,7 @@ export default function Portfolio() {
             >
               <div className="overflow-hidden h-56">
                 <img
-                  src={item.image}
+                  src={buildImageUrl(item.imageName)}
                   alt={item.title}
                   className="h-full w-full object-cover transition duration-300 group-hover:opacity-90"
                 />

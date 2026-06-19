@@ -8,7 +8,7 @@ const portfolioItems = [
   {
     title: 'Agency Landing Page',
     description: 'A modern landing page designed for creative agencies.',
-    href: '#contact',
+    href: 'https://avertinglanding.netlify.app/',
     imageName: 'Agency group.png',
   },
   {
