@@ -34,7 +34,7 @@ const Header = () => {
             ))}
           </ul>
 
-          <a href="Scropt/CV.pdf" className="inline-block px-[30px] py-[9px] border-2 border-orange-600 rounded-[30px] text-orange-600 font-medium transition-all duration-500 hover:scale-110 hover:bg-orange-600 hover:text-white">
+          <a href="/assets/images/CV.pdf" download className="inline-block px-[30px] py-[9px] border-2 border-orange-600 rounded-[30px] text-orange-600 font-medium transition-all duration-500 hover:scale-110 hover:bg-orange-600 hover:text-white">
             Download CV
           </a>
         </nav>
