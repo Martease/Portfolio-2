@@ -1,6 +1,8 @@
 import type { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next'
+import { getServerSession } from 'next-auth/next'
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { isBackOfficeAuthenticated } from '../lib/backOfficeAuth'
+import { signOut } from 'next-auth/react'
+import { authOptions } from './api/auth/[...nextauth]'
 
 type Contract = {
   id: number
@@ -38,7 +40,6 @@ const formatMoney = (amountInCents: number, currency: string) => {
 export default function BackOfficePage({ authenticated }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [form, setForm] = useState<NewContractForm>(initialForm)
-  const [passcode, setPasscode] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
@@ -53,44 +54,12 @@ export default function BackOfficePage({ authenticated }: InferGetServerSideProp
     [contracts]
   )
 
-  async function signInBackOffice(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError('')
-    setAuthLoading(true)
-
-    try {
-      const res = await fetch('/api/back-office/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ passcode }),
-      })
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.message || 'Failed to sign in')
-      }
-
-      window.location.reload()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in')
-    } finally {
-      setAuthLoading(false)
-    }
-  }
-
   async function signOutBackOffice() {
     setError('')
     setSuccess('')
     setAuthLoading(true)
 
-    try {
-      await fetch('/api/back-office/auth', { method: 'DELETE' })
-      window.location.reload()
-    } catch {
-      window.location.reload()
-    }
+    await signOut({ callbackUrl: '/login' })
   }
 
   async function loadContracts() {
@@ -226,36 +195,6 @@ export default function BackOfficePage({ authenticated }: InferGetServerSideProp
     }
   }
 
-  if (!authenticated) {
-    return (
-      <main className="min-h-screen bg-slate-100 px-6 py-12">
-        <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-orange-600">Owner Access</p>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-900">Back Office</h1>
-          <p className="mt-2 text-sm text-slate-600">Enter your passcode to access contracts and Stripe controls.</p>
-
-          <form className="mt-6 space-y-3" onSubmit={signInBackOffice}>
-            <input
-              type="password"
-              value={passcode}
-              onChange={(event) => setPasscode(event.target.value)}
-              placeholder="Back office passcode"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2"
-            />
-            {error && <p className="text-sm text-red-700">{error}</p>}
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full rounded-xl bg-slate-900 px-4 py-2 text-white transition hover:bg-black disabled:opacity-60"
-            >
-              {authLoading ? 'Signing in...' : 'Enter Back Office'}
-            </button>
-          </form>
-        </div>
-      </main>
-    )
-  }
-
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
       <div className="mx-auto max-w-6xl">
@@ -268,6 +207,14 @@ export default function BackOfficePage({ authenticated }: InferGetServerSideProp
               <div className="mt-5 flex flex-wrap gap-3 text-sm">
                 <span className="rounded-full bg-white/10 px-3 py-1">Contracts: {contractCount}</span>
                 <span className="rounded-full bg-white/10 px-3 py-1">Open Invoices: {openInvoices}</span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <a href="/back-office/executive-dashboard" className="rounded-full bg-white/10 px-3 py-2">Executive Dashboard</a>
+                <a href="/back-office/crm" className="rounded-full bg-white/10 px-3 py-2">CRM</a>
+                <a href="/back-office/projects" className="rounded-full bg-white/10 px-3 py-2">Project Workspace</a>
+                <a href="/back-office/wiki" className="rounded-full bg-white/10 px-3 py-2">Knowledge Base</a>
+                <a href="/back-office/analytics" className="rounded-full bg-white/10 px-3 py-2">Analytics</a>
+                <a href="/back-office/audit-logs" className="rounded-full bg-white/10 px-3 py-2">Audit Logs</a>
               </div>
             </div>
             <button
@@ -421,13 +368,20 @@ export default function BackOfficePage({ authenticated }: InferGetServerSideProp
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const authenticated = isBackOfficeAuthenticated({
-    cookies: context.req.cookies,
-  })
+  const session = await getServerSession(context.req, context.res, authOptions)
+
+  if (!session?.user || session.user.role !== 'admin') {
+    return {
+      redirect: {
+        destination: '/login?callbackUrl=/back-office',
+        permanent: false,
+      },
+    }
+  }
 
   return {
     props: {
-      authenticated,
+      authenticated: true,
     },
   }
 }

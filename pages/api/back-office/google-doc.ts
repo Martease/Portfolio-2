@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getContract } from '../../../lib/contractStore'
-import { isBackOfficeAuthenticated } from '../../../lib/backOfficeAuth'
+import { deny, getApiSession, hasRole } from '../../../lib/authz'
+import { createContractDocFromTemplate } from '../../../lib/googleWorkspace'
+import { findClientEmailByContractId } from '../../../lib/userStore'
 
 type GoogleDocResponse = {
   message: string
@@ -14,13 +16,18 @@ type GoogleDocResponse = {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<GoogleDocResponse>) {
-  if (!isBackOfficeAuthenticated(req)) {
-    return res.status(401).json({ message: 'Unauthorized' })
-  }
-
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST'])
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+  }
+
+  const session = await getApiSession(req, res)
+  if (!session?.user) {
+    return deny(res, 401, 'Authentication required')
+  }
+
+  if (!hasRole(session.user.role, ['admin'])) {
+    return deny(res, 403, 'Admin role required')
   }
 
   const contractId = String(req.body?.contractId || '')
@@ -50,12 +57,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     })
   }
 
-  // Placeholder behavior until full googleapis integration is added.
-  // This opens your template as a quick starting point once env vars are set.
-  const docUrl = `https://docs.google.com/document/d/${templateId}/edit`
+  const generated = await createContractDocFromTemplate({
+    contractId: contract.contract_id,
+    clientName: contract.client_name,
+    templateId,
+    targetFolderId: folderId,
+    clientEmail: await findClientEmailByContractId(contract.contract_id),
+  })
+
+  const docUrl = generated?.docUrl || `https://docs.google.com/document/d/${templateId}/edit`
 
   return res.status(200).json({
-    message: `Google Docs config detected for ${contract.contract_id}. Next step is wiring automatic document creation from the template.`,
+    message: `Google Docs document prepared for ${contract.contract_id}.`,
     docUrl,
   })
 }

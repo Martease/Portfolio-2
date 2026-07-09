@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contract {
+  id              Int      @id @default(autoincrement())
+  contract_id     String   @unique
+  client_name     String
+  amount_due_cents Int
+  currency        String   @default("USD")
+  payment_status  String   @default("Pending")
+  payment_link    String?
+
+  clientProject   ClientProject?
+  invoices        Invoice[]
+  documents       ContractDocument[]
+  crmClient       CrmClient?
+}
+
+model AppUser {
+  id                    Int       @id @default(autoincrement())
+  name                  String
+  email                 String    @unique
+  password_hash         String
+  role                  String
+  contract_id           String?
+  email_verified_at     DateTime?
+  failed_login_attempts Int       @default(0)
+  lockout_until         DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+}
+
+model PasswordResetToken {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token_hash String
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+}
+
+model EmailVerificationToken {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token_hash String
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+}
+
+model ClientProject {
+  id               Int                     @id @default(autoincrement())
+  contract_id      String                  @unique
+  title            String
+  status           String                  @default("Active")
+  progress_percent Int                     @default(0)
+  start_date       DateTime?
+  due_date         DateTime?
+  created_at       DateTime                @default(now())
+  updated_at       DateTime                @updatedAt
+
+  contract         Contract                @relation(fields: [contract_id], references: [contract_id], onDelete: Cascade)
+  milestones       ProjectMilestone[]
+  tasks            ProjectTask[]
+  deliverables     ProjectDeliverable[]
+  timelineEvents   ProjectTimelineEvent[]
+  notes            ProjectNote[]
+  files            ProjectFile[]
+  notifications    ProjectNotification[]
+  workspaceItems   GoogleWorkspaceResource[]
+  projectAssets    ProjectAsset[]
+  credentials      ProjectCredential[]
+  integration      ProjectIntegration?
+  worklogs         WorklogEntry[]
+}
+
+model ProjectMilestone {
+  id         Int       @id @default(autoincrement())
+  project_id Int
+  title      String
+  due_date   DateTime?
+  completed  Boolean   @default(false)
+  created_at DateTime  @default(now())
+
+  project    ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectTask {
+  id         Int       @id @default(autoincrement())
+  project_id Int
+  title      String
+  assignee   String?
+  status     String    @default("Pending")
+  due_date   DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  project    ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectDeliverable {
+  id          Int      @id @default(autoincrement())
+  project_id  Int
+  title       String
+  description String?
+  status      String   @default("Pending")
+  created_at  DateTime @default(now())
+
+  project     ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectTimelineEvent {
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  title      String
+  detail     String?
+  event_date DateTime
+  created_at DateTime @default(now())
+
+  project    ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectNote {
+  id          Int      @id @default(autoincrement())
+  project_id  Int
+  author_role String
+  note_type   String   @default("note")
+  body        String
+  created_at  DateTime @default(now())
+
+  project     ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectFile {
+  id               Int      @id @default(autoincrement())
+  project_id       Int
+  file_name        String
+  file_url         String
+  file_type        String?
+  uploaded_by_role String
+  created_at       DateTime @default(now())
+
+  project          ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectNotification {
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  message    String
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  project    ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id             Int      @id @default(autoincrement())
+  contract_id    String
+  invoice_number String   @unique
+  amount_cents   Int
+  currency       String   @default("USD")
+  status         String   @default("Open")
+  due_date       DateTime?
+  created_at     DateTime @default(now())
+
+  contract       Contract @relation(fields: [contract_id], references: [contract_id], onDelete: Cascade)
+}
+
+model GoogleWorkspaceResource {
+  id            Int      @id @default(autoincrement())
+  project_id    Int
+  resource_name String
+  resource_type String
+  resource_id   String?
+  resource_url  String
+  created_at    DateTime @default(now())
+
+  project       ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, resource_name])
+}
+
+model ContractTemplate {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  description   String?
+  template_body String
+  created_by    String
+  created_at    DateTime @default(now())
+
+  documents     ContractDocument[]
+}
+
+model ContractDocument {
+  id              Int      @id @default(autoincrement())
+  contract_id     String
+  template_id     Int?
+  title           String
+  version_number  Int      @default(1)
+  pdf_url         String?
+  signed_copy_url String?
+  created_by      String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  contract        Contract         @relation(fields: [contract_id], references: [contract_id], onDelete: Cascade)
+  template        ContractTemplate? @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  versions        ContractVersion[]
+}
+
+model ContractVersion {
+  id                   Int      @id @default(autoincrement())
+  contract_document_id Int
+  version_number       Int
+  change_note          String?
+  content_snapshot     String
+  pdf_url              String?
+  created_by           String
+  created_at           DateTime @default(now())
+
+  document             ContractDocument @relation(fields: [contract_document_id], references: [id], onDelete: Cascade)
+}
+
+model CrmClient {
+  id            Int       @id @default(autoincrement())
+  contract_id   String?   @unique
+  name          String
+  contact_name  String?
+  contact_email String?
+  contact_phone String?
+  status        String    @default("Active")
+  tags          String[]
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  contract      Contract? @relation(fields: [contract_id], references: [contract_id], onDelete: SetNull)
+  notes         CrmNote[]
+  files         CrmFile[]
+  emails        CrmEmail[]
+  worklogs      WorklogEntry[]
+}
+
+model CrmNote {
+  id            Int      @id @default(autoincrement())
+  crm_client_id Int
+  body          String
+  created_by    String
+  created_at    DateTime @default(now())
+
+  crmClient     CrmClient @relation(fields: [crm_client_id], references: [id], onDelete: Cascade)
+}
+
+model CrmFile {
+  id            Int      @id @default(autoincrement())
+  crm_client_id Int
+  file_name     String
+  file_url      String
+  uploaded_by   String
+  created_at    DateTime @default(now())
+
+  crmClient     CrmClient @relation(fields: [crm_client_id], references: [id], onDelete: Cascade)
+}
+
+model CrmEmail {
+  id            Int      @id @default(autoincrement())
+  crm_client_id Int
+  direction     String
+  subject       String
+  body          String
+  is_read       Boolean  @default(false)
+  sent_at       DateTime @default(now())
+
+  crmClient     CrmClient @relation(fields: [crm_client_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectAsset {
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  asset_name String
+  asset_type String
+  asset_url  String
+  created_at DateTime @default(now())
+
+  project    ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectCredential {
+  id                      Int      @id @default(autoincrement())
+  project_id              Int
+  credential_name         String
+  credential_value_masked String
+  created_at              DateTime @default(now())
+
+  project                 ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectIntegration {
+  id             Int      @id @default(autoincrement())
+  project_id     Int      @unique
+  github_url     String?
+  deployment_url String?
+  updated_at     DateTime @updatedAt
+
+  project        ClientProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model KnowledgeBaseEntry {
+  id         Int      @id @default(autoincrement())
+  category   String
+  title      String
+  body       String
+  tags       String[]
+  created_by String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([category, title])
+}
+
+model WorklogEntry {
+  id            Int       @id @default(autoincrement())
+  project_id    Int?
+  crm_client_id Int?
+  hours_spent   Decimal
+  note          String?
+  logged_by     String
+  logged_at     DateTime  @default(now())
+
+  project       ClientProject? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  crmClient     CrmClient?     @relation(fields: [crm_client_id], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  actor_email  String
+  actor_role   String
+  action       String
+  entity_type  String
+  entity_id    String?
+  metadata_json Json
+  created_at   DateTime @default(now())
+}

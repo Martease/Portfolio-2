@@ -1,14 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Stripe from 'stripe'
 import { updateContract } from '../../../lib/contractStore'
+import { ensureMethod } from '../../../lib/apiGuards'
 
 export const config = {
   api: {
     bodyParser: false,
   },
 }
-
-const stripe = new Stripe(process.env.STRIPE_API_KEY || '')
 
 async function readRawBody(req: NextApiRequest): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -20,29 +19,29 @@ async function readRawBody(req: NextApiRequest): Promise<Buffer> {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
-    return res.status(405).end(`Method ${req.method} Not Allowed`)
-  }
+  if (!ensureMethod(req, res, ['POST'])) return
 
   const rawBody = await readRawBody(req)
   const signature = req.headers['stripe-signature'] as string | undefined
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  const stripeApiKey = process.env.STRIPE_API_KEY
+
+  if (!stripeApiKey) {
+    return res.status(500).json({ message: 'Stripe API key not configured' })
+  }
+
+  const stripe = new Stripe(stripeApiKey)
 
   let event: Stripe.Event
 
-  if (webhookSecret && signature) {
-    try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
-    } catch (error: any) {
-      return res.status(400).json({ message: `Webhook signature verification failed: ${error.message}` })
-    }
-  } else {
-    try {
-      event = JSON.parse(rawBody.toString('utf8'))
-    } catch (error: any) {
-      return res.status(400).json({ message: 'Invalid JSON payload' })
-    }
+  if (!webhookSecret || !signature) {
+    return res.status(400).json({ message: 'Webhook signature verification is required' })
+  }
+
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
+  } catch (error: any) {
+    return res.status(400).json({ message: `Webhook signature verification failed: ${error.message}` })
   }
 
   const relevantEvents = ['checkout.session.completed', 'payment_intent.succeeded']
