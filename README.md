@@ -62,6 +62,9 @@ This repository demonstrates a full-stack Next.js setup with frontend pages, API
 ## 🧱 Infrastructure (Phase 5 / Epic 18)
 - Prisma schema lives at `prisma/schema.prisma`.
 - Prisma client singleton lives at `lib/prisma.ts`.
+- Environment template lives at `.env.example`.
+- Vercel config lives at `vercel.json`.
+- Admin infrastructure status endpoint: `GET /api/back-office/infrastructure`.
 - Prisma commands:
    - `npm run prisma:generate`
    - `npm run prisma:migrate:dev`

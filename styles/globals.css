@@ -12,6 +12,10 @@
     --brand-cloud: #e2e8f0;
     --brand-ember: #ea580c;
     --brand-ember-deep: #9a3412;
+    --brand-mist: #f1f5f9;
+    --brand-ocean: #0ea5e9;
+    --radius-card: 1.5rem;
+    --radius-pill: 999px;
     --bg-tint: #fff5eb;
   }
 
@@ -71,5 +75,45 @@
     background: rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(226, 232, 240, 0.9);
     backdrop-filter: blur(12px);
+  }
+
+  .section-divider {
+    border-top: 1px solid rgba(226, 232, 240, 0.75);
+  }
+
+  .reveal-item {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  .reveal-item-visible {
+    animation: reveal-up 700ms cubic-bezier(0.2, 0.82, 0.2, 1) var(--reveal-delay, 0ms) forwards;
+  }
+
+  .hero-image-float {
+    animation: hero-float 7s ease-in-out 350ms infinite;
+  }
+}
+
+@keyframes reveal-up {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
   }
 }

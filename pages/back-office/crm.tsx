@@ -26,7 +26,11 @@ export default function CrmPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [newClientName, setNewClientName] = useState('')
+  const [newClientContactName, setNewClientContactName] = useState('')
   const [newClientContactEmail, setNewClientContactEmail] = useState('')
+  const [newClientContactPhone, setNewClientContactPhone] = useState('')
+  const [newClientStatus, setNewClientStatus] = useState('Active')
+  const [newClientTags, setNewClientTags] = useState('')
 
   async function loadClients() {
     const res = await fetch('/api/back-office/crm')
@@ -63,11 +67,72 @@ export default function CrmPage() {
   async function createClient(event: FormEvent) {
     event.preventDefault()
     if (!newClientName) return
-    const ok = await postAction({ action: 'createClient', name: newClientName, contactEmail: newClientContactEmail })
+    const ok = await postAction({
+      action: 'createClient',
+      name: newClientName,
+      contactName: newClientContactName || undefined,
+      contactEmail: newClientContactEmail || undefined,
+      contactPhone: newClientContactPhone || undefined,
+      status: newClientStatus || undefined,
+      tags: newClientTags
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    })
     if (ok) {
       setNewClientName('')
+      setNewClientContactName('')
       setNewClientContactEmail('')
+      setNewClientContactPhone('')
+      setNewClientStatus('Active')
+      setNewClientTags('')
     }
+  }
+
+  async function addNoteForClient(crmClientId: number) {
+    const noteBody = window.prompt('Note')
+    if (!noteBody?.trim()) return
+    await postAction({ action: 'addNote', crmClientId, noteBody })
+  }
+
+  async function addFileForClient(crmClientId: number) {
+    const fileName = window.prompt('File name')
+    if (!fileName?.trim()) return
+    const fileUrl = window.prompt('File URL (https://...)')
+    if (!fileUrl?.trim()) return
+    await postAction({ action: 'addFile', crmClientId, fileName, fileUrl })
+  }
+
+  async function addEmailForClient(crmClientId: number) {
+    const directionInput = window.prompt('Direction: inbound or outbound', 'outbound')
+    const direction = directionInput === 'inbound' ? 'inbound' : 'outbound'
+    const subject = window.prompt('Email subject')
+    if (!subject?.trim()) return
+    const body = window.prompt('Email body')
+    if (!body?.trim()) return
+    const isRead = direction === 'outbound'
+    await postAction({ action: 'addEmail', crmClientId, direction, subject, body, isRead })
+  }
+
+  async function editClient(bundle: CrmClientBundle) {
+    const contactName = window.prompt('Contact name', bundle.client.contact_name || '') || undefined
+    const contactEmail = window.prompt('Contact email', bundle.client.contact_email || '') || undefined
+    const contactPhone = window.prompt('Contact phone', bundle.client.contact_phone || '') || undefined
+    const status = window.prompt('Status', bundle.client.status) || undefined
+    const tags = window.prompt('Tags (comma separated)', (bundle.client.tags || []).join(', '))
+      ?.split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    await postAction({
+      action: 'updateClient',
+      crmClientId: bundle.client.id,
+      contactName,
+      contactEmail,
+      contactPhone,
+      status,
+      tags,
+    })
   }
 
   return (
@@ -79,6 +144,8 @@ export default function CrmPage() {
           <div className="mt-4 flex gap-3 text-sm">
             <a href="/back-office" className="rounded bg-white/10 px-3 py-2">Back Office Home</a>
             <a href="/back-office/executive-dashboard" className="rounded bg-white/10 px-3 py-2">Executive Dashboard</a>
+            <a href="/back-office/infrastructure" className="rounded bg-white/10 px-3 py-2">Infrastructure</a>
+            <a href="/api/back-office/export/crm" className="rounded bg-white/10 px-3 py-2">Export CSV</a>
           </div>
         </header>
 
@@ -92,9 +159,33 @@ export default function CrmPage() {
               className="rounded border px-3 py-2"
             />
             <input
+              value={newClientContactName}
+              onChange={(event) => setNewClientContactName(event.target.value)}
+              placeholder="Contact name"
+              className="rounded border px-3 py-2"
+            />
+            <input
               value={newClientContactEmail}
               onChange={(event) => setNewClientContactEmail(event.target.value)}
               placeholder="Contact email"
+              className="rounded border px-3 py-2"
+            />
+            <input
+              value={newClientContactPhone}
+              onChange={(event) => setNewClientContactPhone(event.target.value)}
+              placeholder="Contact phone"
+              className="rounded border px-3 py-2"
+            />
+            <input
+              value={newClientStatus}
+              onChange={(event) => setNewClientStatus(event.target.value)}
+              placeholder="Status"
+              className="rounded border px-3 py-2"
+            />
+            <input
+              value={newClientTags}
+              onChange={(event) => setNewClientTags(event.target.value)}
+              placeholder="Tags (comma separated)"
               className="rounded border px-3 py-2"
             />
             <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Create</button>
@@ -118,6 +209,16 @@ export default function CrmPage() {
 
               <div className="mt-4 grid gap-4 lg:grid-cols-3">
                 <div>
+                  <p className="text-sm font-semibold text-slate-800">Contact Info</p>
+                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                    <li>Name: {bundle.client.contact_name || 'N/A'}</li>
+                    <li>Email: {bundle.client.contact_email || 'N/A'}</li>
+                    <li>Phone: {bundle.client.contact_phone || 'N/A'}</li>
+                    <li>Status: {bundle.client.status}</li>
+                    <li>Tags: {(bundle.client.tags || []).join(', ') || 'none'}</li>
+                  </ul>
+                </div>
+                <div>
                   <p className="text-sm font-semibold text-slate-800">Projects</p>
                   <ul className="mt-2 space-y-1 text-sm text-slate-700">
                     {bundle.projects.length === 0 ? <li>None</li> : null}
@@ -135,33 +236,75 @@ export default function CrmPage() {
                     ))}
                   </ul>
                 </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Notes</p>
+                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                    {bundle.notes.length === 0 ? <li>None</li> : null}
+                    {bundle.notes.slice(0, 6).map((note) => (
+                      <li key={note.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{note.body}</span>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteNote', crmClientId: bundle.client.id, noteId: note.id })}>Delete</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Files</p>
+                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                    {bundle.files.length === 0 ? <li>None</li> : null}
+                    {bundle.files.slice(0, 6).map((file) => (
+                      <li key={file.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <a href={file.file_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                            {file.file_name}
+                          </a>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteFile', crmClientId: bundle.client.id, fileId: file.id })}>Delete</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-800">Emails</p>
                   <ul className="mt-2 space-y-1 text-sm text-slate-700">
                     {bundle.emails.length === 0 ? <li>None</li> : null}
                     {bundle.emails.slice(0, 5).map((email) => (
-                      <li key={email.id}>{email.direction}: {email.subject}</li>
+                      <li key={email.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{email.direction}: {email.subject}</span>
+                          <div className="flex gap-1">
+                            <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'markEmailRead', crmClientId: bundle.client.id, emailId: email.id, isRead: !email.is_read })}>{email.is_read ? 'Unread' : 'Read'}</button>
+                            <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteEmail', crmClientId: bundle.client.id, emailId: email.id })}>Delete</button>
+                          </div>
+                        </div>
+                      </li>
                     ))}
                   </ul>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => editClient(bundle)}>Edit Client</button>
                 <button
                   className="rounded border px-2 py-1 text-xs"
-                  onClick={() => postAction({ action: 'addNote', crmClientId: bundle.client.id, noteBody: 'Followed up on roadmap priorities.' })}
+                  onClick={() => addNoteForClient(bundle.client.id)}
                 >
-                  Quick Note
+                  Add Note
                 </button>
                 <button
                   className="rounded border px-2 py-1 text-xs"
-                  onClick={() => postAction({ action: 'addFile', crmClientId: bundle.client.id, fileName: 'Client Brief', fileUrl: 'https://example.com/client-brief' })}
+                  onClick={() => addFileForClient(bundle.client.id)}
                 >
-                  Quick File
+                  Add File
                 </button>
                 <button
                   className="rounded border px-2 py-1 text-xs"
-                  onClick={() => postAction({ action: 'addEmail', crmClientId: bundle.client.id, direction: 'outbound', subject: 'Weekly Update', body: 'Shared latest progress and blockers.', isRead: true })}
+                  onClick={() => addEmailForClient(bundle.client.id)}
                 >
                   Log Email
                 </button>

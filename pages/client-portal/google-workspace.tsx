@@ -1,5 +1,8 @@
+import type { GetServerSidePropsContext } from 'next'
+import { getServerSession } from 'next-auth/next'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { authOptions } from '../api/auth/[...nextauth]'
 
 export default function ClientGoogleWorkspacePage() {
   const { data: session, status } = useSession()
@@ -46,6 +49,7 @@ export default function ClientGoogleWorkspacePage() {
       <div className="mt-4 flex gap-3">
         <a href="/client-portal" className="rounded-lg bg-slate-200 px-3 py-2">Back to Dashboard</a>
         <button className="rounded-lg bg-slate-900 px-3 py-2 text-white" onClick={provisionResources}>Create / Refresh Resources</button>
+        <a href="/client-portal/project" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">Leave Comments</a>
       </div>
       {message ? <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-emerald-700">{message}</p> : null}
       {error ? <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">{error}</p> : null}
@@ -69,4 +73,29 @@ export default function ClientGoogleWorkspacePage() {
       </div>
     </main>
   )
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions)
+
+  if (!session?.user) {
+    const callbackUrl = encodeURIComponent('/client-portal/google-workspace')
+    return {
+      redirect: {
+        destination: `/login?callbackUrl=${callbackUrl}`,
+        permanent: false,
+      },
+    }
+  }
+
+  if (!session.user.role || !['client', 'admin'].includes(session.user.role)) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    }
+  }
+
+  return { props: {} }
 }

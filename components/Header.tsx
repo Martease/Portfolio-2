@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { useEffect, useMemo, useState } from 'react'
 import { brandFoundation, publicNavItems } from '../lib/brand'
@@ -9,24 +10,27 @@ const trackableSections = publicNavItems
 
 export default function Header() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState('home')
+  const [activeSection, setActiveSection] = useState('')
 
   useEffect(() => {
-    const onRouteChange = () => {
+    const onRouteOrHashChange = () => {
       setIsMenuOpen(false)
 
-      if (window.location.hash) {
+      if (router.pathname === '/' && window.location.hash) {
         setActiveSection(window.location.hash.replace('#', ''))
-      } else {
+      } else if (router.pathname === '/') {
         setActiveSection('home')
+      } else {
+        setActiveSection('')
       }
     }
 
-    onRouteChange()
-    window.addEventListener('hashchange', onRouteChange)
-    return () => window.removeEventListener('hashchange', onRouteChange)
-  }, [])
+    onRouteOrHashChange()
+    window.addEventListener('hashchange', onRouteOrHashChange)
+    return () => window.removeEventListener('hashchange', onRouteOrHashChange)
+  }, [router.pathname])
 
   useEffect(() => {
     const sections = trackableSections
@@ -57,23 +61,34 @@ export default function Header() {
 
   const navItems = useMemo(() => {
     return publicNavItems.map((item) => {
+      if (item.label === 'Client Login' && status === 'authenticated') {
+        const dashboardHref = session?.user?.role === 'admin' ? '/back-office' : '/client-portal'
+        const isActive = router.pathname === dashboardHref || router.pathname.startsWith(`${dashboardHref}/`)
+        return {
+          ...item,
+          label: 'Dashboard',
+          href: dashboardHref,
+          isActive,
+        }
+      }
+
       const isSectionLink = Boolean(item.sectionId)
       const isActive = isSectionLink
         ? router.pathname === '/' && activeSection === item.sectionId
-        : router.pathname.startsWith(item.href)
+        : router.pathname === item.href || router.pathname.startsWith(`${item.href}/`)
 
       return { ...item, isActive }
     })
-  }, [activeSection, router.pathname])
+  }, [activeSection, router.pathname, session?.user?.role, status])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-brand-cloud/70 glass-surface">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-3" aria-label={`${brandFoundation.companyName} home`}>
           <img
-            src="/assets/images/IMG_0942.PNG"
+            src={brandFoundation.logo.markSrc}
             className="h-12 w-12 rounded-full border border-brand-cloud object-cover"
-            alt="Mamvo Labs logo"
+            alt={brandFoundation.logo.alt}
           />
           <div className="hidden sm:block">
             <p className="font-display text-lg leading-tight text-brand-ink">{brandFoundation.companyName}</p>
@@ -89,7 +104,12 @@ export default function Header() {
           aria-controls="site-navigation"
           aria-label="Toggle menu"
         >
-          <span className="text-lg">{isMenuOpen ? 'x' : '='}</span>
+          <span className="sr-only">Open main menu</span>
+          <span className="flex w-5 flex-col gap-1.5" aria-hidden="true">
+            <span className={['h-0.5 w-full bg-current transition-transform', isMenuOpen ? 'translate-y-2 rotate-45' : ''].join(' ')} />
+            <span className={['h-0.5 w-full bg-current transition-opacity', isMenuOpen ? 'opacity-0' : ''].join(' ')} />
+            <span className={['h-0.5 w-full bg-current transition-transform', isMenuOpen ? '-translate-y-2 -rotate-45' : ''].join(' ')} />
+          </span>
         </button>
 
         <nav
@@ -129,6 +149,20 @@ export default function Header() {
                 )}
               </li>
             ))}
+            {status === 'authenticated' ? (
+              <li className="w-full lg:ml-2 lg:w-auto">
+                <button
+                  type="button"
+                  className="block w-full rounded-full border border-brand-cloud px-4 py-2 text-left text-brand-ink transition-colors hover:border-brand-ember hover:text-brand-ember lg:w-auto"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    void signOut({ callbackUrl: '/login' })
+                  }}
+                >
+                  Logout
+                </button>
+              </li>
+            ) : null}
           </ul>
         </nav>
       </div>

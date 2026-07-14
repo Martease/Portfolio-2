@@ -63,6 +63,7 @@ export default function ExecutiveDashboardPage() {
             <a href="/back-office/projects" className="rounded bg-white/10 px-3 py-2">Projects</a>
             <a href="/back-office/wiki" className="rounded bg-white/10 px-3 py-2">Knowledge Base</a>
             <a href="/back-office/analytics" className="rounded bg-white/10 px-3 py-2">Analytics</a>
+            <a href="/back-office/infrastructure" className="rounded bg-white/10 px-3 py-2">Infrastructure</a>
             <a href="/back-office/audit-logs" className="rounded bg-white/10 px-3 py-2">Audit Logs</a>
           </div>
         </header>
@@ -103,6 +104,31 @@ export default function ExecutiveDashboardPage() {
               ))}
             </ul>
           </article>
+        </section>
+
+        <section className="rounded-xl border bg-white p-4">
+          <h2 className="text-lg font-semibold text-slate-900">Operations Snapshot</h2>
+          <div className="mt-4 space-y-3">
+            {cards.map((card) => {
+              const numericValue = Number(card.value.replace(/[^0-9.]/g, '')) || 0
+              const maxBase = payload ? Math.max(payload.projects, payload.clients, payload.tasks, payload.deadlines, payload.unreadMessages, payload.pendingContracts, payload.invoices, 1) : 1
+              const width = card.label === 'Revenue'
+                ? Math.min(100, ((payload?.revenueCents || 0) / 1_000_000) * 100)
+                : Math.min(100, (numericValue / maxBase) * 100)
+
+              return (
+                <div key={`${card.label}-bar`}>
+                  <div className="mb-1 flex items-center justify-between text-sm text-slate-700">
+                    <span>{card.label}</span>
+                    <span className="font-semibold">{card.value}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div className="h-2 rounded-full bg-slate-800" style={{ width: `${width}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </section>
       </div>
     </main>

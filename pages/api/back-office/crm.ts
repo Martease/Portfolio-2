@@ -5,7 +5,12 @@ import {
   addCrmFile,
   addCrmNote,
   createCrmClient,
+  deleteCrmEmail,
+  deleteCrmFile,
+  deleteCrmNote,
   listCrmClients,
+  markCrmEmailRead,
+  updateCrmClient,
 } from '../../../lib/businessOsStore'
 import {
   enforceAdminMutationRateLimit,
@@ -19,8 +24,20 @@ import {
 import { logAdminAudit } from '../../../lib/auditLogStore'
 
 type CrmActionBody = {
-  action?: 'createClient' | 'addNote' | 'addFile' | 'addEmail'
+  action?:
+    | 'createClient'
+    | 'updateClient'
+    | 'addNote'
+    | 'deleteNote'
+    | 'addFile'
+    | 'deleteFile'
+    | 'addEmail'
+    | 'markEmailRead'
+    | 'deleteEmail'
   crmClientId?: number
+  noteId?: number
+  fileId?: number
+  emailId?: number
   contractId?: string
   name?: string
   contactName?: string
@@ -59,7 +76,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       const payload = (req.body || {}) as CrmActionBody
-      const action = validateEnum(payload.action, 'action', ['createClient', 'addNote', 'addFile', 'addEmail'] as const)
+      const action = validateEnum(payload.action, 'action', [
+        'createClient',
+        'updateClient',
+        'addNote',
+        'deleteNote',
+        'addFile',
+        'deleteFile',
+        'addEmail',
+        'markEmailRead',
+        'deleteEmail',
+      ] as const)
 
       if (action === 'createClient') {
         const name = validateString(payload.name, 'name', { min: 2, max: 120 })
@@ -95,6 +122,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const crmClientId = validateInteger(payload.crmClientId, 'crmClientId', { min: 1 })
 
+      if (action === 'updateClient') {
+        await updateCrmClient({
+          crmClientId,
+          contactName: validateOptionalString(payload.contactName, 'contactName', { min: 2, max: 120 }),
+          contactEmail: validateOptionalString(payload.contactEmail, 'contactEmail', {
+            min: 5,
+            max: 200,
+            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+          }),
+          contactPhone: validateOptionalString(payload.contactPhone, 'contactPhone', { min: 7, max: 40 }),
+          status: validateOptionalString(payload.status, 'status', { min: 2, max: 32 }),
+          tags: Array.isArray(payload.tags) ? validateOptionalTags(payload.tags) : undefined,
+        })
+        await logAdminAudit({
+          actorEmail: session.user.email || 'admin@local',
+          actorRole: session.user.role || 'admin',
+          action: 'crm.client.update',
+          entityType: 'crm_client',
+          entityId: crmClientId,
+        })
+        return res.status(200).json({ message: 'Client updated.' })
+      }
+
       if (action === 'addNote') {
         const noteBody = validateString(payload.noteBody, 'noteBody', { min: 2, max: 4000 })
         await addCrmNote(crmClientId, noteBody, session.user.email || 'admin')
@@ -106,6 +156,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           entityId: crmClientId,
         })
         return res.status(200).json({ message: 'CRM note added.' })
+      }
+
+      if (action === 'deleteNote') {
+        const noteId = validateInteger(payload.noteId, 'noteId', { min: 1 })
+        await deleteCrmNote(crmClientId, noteId)
+        await logAdminAudit({
+          actorEmail: session.user.email || 'admin@local',
+          actorRole: session.user.role || 'admin',
+          action: 'crm.note.delete',
+          entityType: 'crm_client',
+          entityId: crmClientId,
+          metadata: { noteId },
+        })
+        return res.status(200).json({ message: 'CRM note deleted.' })
       }
 
       if (action === 'addFile') {
@@ -123,6 +187,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json({ message: 'CRM file added.' })
       }
 
+      if (action === 'deleteFile') {
+        const fileId = validateInteger(payload.fileId, 'fileId', { min: 1 })
+        await deleteCrmFile(crmClientId, fileId)
+        await logAdminAudit({
+          actorEmail: session.user.email || 'admin@local',
+          actorRole: session.user.role || 'admin',
+          action: 'crm.file.delete',
+          entityType: 'crm_client',
+          entityId: crmClientId,
+          metadata: { fileId },
+        })
+        return res.status(200).json({ message: 'CRM file deleted.' })
+      }
+
       if (action === 'addEmail') {
         const direction = validateEnum(payload.direction, 'direction', ['inbound', 'outbound'] as const)
         const subject = validateString(payload.subject, 'subject', { min: 2, max: 200 })
@@ -137,6 +215,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           metadata: { direction, subject },
         })
         return res.status(200).json({ message: 'CRM email logged.' })
+      }
+
+      if (action === 'markEmailRead') {
+        const emailId = validateInteger(payload.emailId, 'emailId', { min: 1 })
+        await markCrmEmailRead(crmClientId, emailId, Boolean(payload.isRead))
+        await logAdminAudit({
+          actorEmail: session.user.email || 'admin@local',
+          actorRole: session.user.role || 'admin',
+          action: 'crm.email.mark_read',
+          entityType: 'crm_client',
+          entityId: crmClientId,
+          metadata: { emailId, isRead: Boolean(payload.isRead) },
+        })
+        return res.status(200).json({ message: 'CRM email updated.' })
+      }
+
+      if (action === 'deleteEmail') {
+        const emailId = validateInteger(payload.emailId, 'emailId', { min: 1 })
+        await deleteCrmEmail(crmClientId, emailId)
+        await logAdminAudit({
+          actorEmail: session.user.email || 'admin@local',
+          actorRole: session.user.role || 'admin',
+          action: 'crm.email.delete',
+          entityType: 'crm_client',
+          entityId: crmClientId,
+          metadata: { emailId },
+        })
+        return res.status(200).json({ message: 'CRM email deleted.' })
       }
 
       return res.status(400).json({ message: `Unsupported action ${action}` })

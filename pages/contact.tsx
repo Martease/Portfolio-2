@@ -1,5 +1,6 @@
 import Header from '../components/Header'
 import Button from '../components/ui/Button'
+import FormField from '../components/ui/FormField'
 import SectionHeading from '../components/ui/SectionHeading'
 import SurfaceCard from '../components/ui/SurfaceCard'
 import { FormEvent, useState } from 'react'
@@ -82,29 +83,33 @@ export default function ContactPage() {
                   onChange={(event) => setCompany(event.target.value)}
                 />
               </div>
-              <input
+              <FormField
+                id="name"
+                label="Name"
                 type="text"
                 required
-                placeholder="Name"
+                placeholder="Your name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-xl border border-brand-cloud px-4 py-3"
               />
-              <input
+              <FormField
+                id="email"
+                label="Email"
                 type="email"
                 required
-                placeholder="Email"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-xl border border-brand-cloud px-4 py-3"
               />
-              <textarea
+              <FormField
+                as="textarea"
+                id="message"
+                label="Project Details"
                 required
                 placeholder="Tell me about the project"
                 rows={6}
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                className="w-full rounded-xl border border-brand-cloud px-4 py-3"
               />
               <Button type="submit" className="w-full sm:w-auto">
                 {submitting ? 'Sending...' : 'Send Message'}

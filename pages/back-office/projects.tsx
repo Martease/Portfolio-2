@@ -19,6 +19,8 @@ export default function AdminProjectsPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
+  const kanbanColumns = ['Pending', 'In Progress', 'Blocked', 'Done']
+
   async function loadProjects() {
     const res = await fetch('/api/back-office/projects')
     const data = await res.json().catch(() => ({}))
@@ -50,6 +52,59 @@ export default function AdminProjectsPage() {
     await loadProjects()
   }
 
+  async function addTask(projectId: number) {
+    const title = window.prompt('Task title')
+    if (!title?.trim()) return
+    const assignee = window.prompt('Assignee (optional)') || undefined
+    await postAction({ action: 'addTask', projectId, title, assignee })
+  }
+
+  async function addTimeline(projectId: number) {
+    const title = window.prompt('Timeline event title')
+    if (!title?.trim()) return
+    const detail = window.prompt('Timeline detail (optional)') || undefined
+    await postAction({ action: 'addTimeline', projectId, title, detail })
+  }
+
+  async function addFile(projectId: number) {
+    const fileName = window.prompt('File name')
+    if (!fileName?.trim()) return
+    const fileUrl = window.prompt('File URL (https://...)')
+    if (!fileUrl?.trim()) return
+    await postAction({ action: 'addFile', projectId, fileName, fileUrl })
+  }
+
+  async function addAsset(projectId: number) {
+    const assetName = window.prompt('Asset name')
+    if (!assetName?.trim()) return
+    const assetType = window.prompt('Asset type (image, video, doc, etc.)')
+    if (!assetType?.trim()) return
+    const assetUrl = window.prompt('Asset URL (https://...)')
+    if (!assetUrl?.trim()) return
+    await postAction({ action: 'addAsset', projectId, assetName, assetType, assetUrl })
+  }
+
+  async function addNote(projectId: number) {
+    const noteBody = window.prompt('Note')
+    if (!noteBody?.trim()) return
+    await postAction({ action: 'addNote', projectId, noteBody })
+  }
+
+  async function addCredential(projectId: number) {
+    const credentialName = window.prompt('Credential name')
+    if (!credentialName?.trim()) return
+    const credentialValueMasked = window.prompt('Masked credential value (for example, AKIA********)')
+    if (!credentialValueMasked?.trim()) return
+    await postAction({ action: 'addCredential', projectId, credentialName, credentialValueMasked })
+  }
+
+  async function setIntegrations(projectId: number) {
+    const githubUrl = window.prompt('GitHub URL (optional)') || undefined
+    const deploymentUrl = window.prompt('Deployment URL (optional)') || undefined
+    if (!githubUrl && !deploymentUrl) return
+    await postAction({ action: 'upsertIntegration', projectId, githubUrl, deploymentUrl })
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -59,6 +114,8 @@ export default function AdminProjectsPage() {
           <div className="mt-4 flex gap-3 text-sm">
             <a href="/back-office" className="rounded bg-white/10 px-3 py-2">Back Office Home</a>
             <a href="/back-office/executive-dashboard" className="rounded bg-white/10 px-3 py-2">Executive Dashboard</a>
+            <a href="/back-office/infrastructure" className="rounded bg-white/10 px-3 py-2">Infrastructure</a>
+            <a href="/api/back-office/export/projects" className="rounded bg-white/10 px-3 py-2">Export CSV</a>
           </div>
         </header>
 
@@ -79,17 +136,54 @@ export default function AdminProjectsPage() {
               <div className="mt-4 grid gap-4 lg:grid-cols-4">
                 <div>
                   <p className="text-sm font-semibold">Kanban Tasks</p>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    {bundle.tasks.slice(0, 6).map((task) => (
-                      <li key={task.id} className="rounded bg-slate-50 px-2 py-1">{task.title} ({task.status})</li>
+                  <div className="mt-2 grid gap-2">
+                    {kanbanColumns.map((column) => (
+                      <div key={column} className="rounded bg-slate-50 p-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{column}</p>
+                        <ul className="mt-1 space-y-1 text-sm">
+                          {bundle.tasks
+                            .filter((task) => task.status === column)
+                            .slice(0, 5)
+                            .map((task) => (
+                              <li key={task.id} className="rounded bg-white px-2 py-1">
+                                <p>{task.title}</p>
+                                <select
+                                  className="mt-1 w-full rounded border px-1 py-1 text-xs"
+                                  value={task.status}
+                                  onChange={(event) => postAction({
+                                    action: 'setTaskStatus',
+                                    projectId: bundle.project.id,
+                                    taskId: task.id,
+                                    status: event.target.value,
+                                  })}
+                                >
+                                  {kanbanColumns.map((status) => (
+                                    <option key={status} value={status}>{status}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  className="mt-1 w-full rounded border px-1 py-1 text-xs"
+                                  onClick={() => postAction({ action: 'deleteTask', projectId: bundle.project.id, entityId: task.id })}
+                                >
+                                  Delete
+                                </button>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Timeline</p>
                   <ul className="mt-2 space-y-1 text-sm">
                     {bundle.timeline.slice(0, 6).map((event) => (
-                      <li key={event.id} className="rounded bg-slate-50 px-2 py-1">{event.title}</li>
+                      <li key={event.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{event.title}</span>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteTimeline', projectId: bundle.project.id, entityId: event.id })}>Delete</button>
+                        </div>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -97,10 +191,24 @@ export default function AdminProjectsPage() {
                   <p className="text-sm font-semibold">Files / Assets</p>
                   <ul className="mt-2 space-y-1 text-sm">
                     {bundle.files.slice(0, 3).map((file) => (
-                      <li key={file.id} className="rounded bg-slate-50 px-2 py-1">{file.file_name}</li>
+                      <li key={file.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <a href={file.file_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                            {file.file_name}
+                          </a>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteFile', projectId: bundle.project.id, entityId: file.id })}>Delete</button>
+                        </div>
+                      </li>
                     ))}
                     {bundle.assets.slice(0, 3).map((asset) => (
-                      <li key={asset.id} className="rounded bg-slate-50 px-2 py-1">{asset.asset_name}</li>
+                      <li key={asset.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <a href={asset.asset_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                            {asset.asset_name}
+                          </a>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteAsset', projectId: bundle.project.id, entityId: asset.id })}>Delete</button>
+                        </div>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -108,22 +216,36 @@ export default function AdminProjectsPage() {
                   <p className="text-sm font-semibold">Credentials / Integrations</p>
                   <ul className="mt-2 space-y-1 text-sm">
                     {bundle.credentials.slice(0, 3).map((credential) => (
-                      <li key={credential.id} className="rounded bg-slate-50 px-2 py-1">{credential.credential_name}</li>
+                      <li key={credential.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{credential.credential_name}</span>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteCredential', projectId: bundle.project.id, entityId: credential.id })}>Delete</button>
+                        </div>
+                      </li>
                     ))}
                     <li className="rounded bg-slate-50 px-2 py-1">GitHub: {bundle.integrations?.github_url || 'N/A'}</li>
                     <li className="rounded bg-slate-50 px-2 py-1">Deployment: {bundle.integrations?.deployment_url || 'N/A'}</li>
+                    <li className="rounded bg-slate-50 px-2 py-1">Notes: {bundle.notes.length}</li>
+                    {bundle.notes.slice(0, 2).map((note) => (
+                      <li key={note.id} className="rounded bg-slate-50 px-2 py-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{note.body}</span>
+                          <button className="rounded border px-1 py-0.5 text-[11px]" onClick={() => postAction({ action: 'deleteNote', projectId: bundle.project.id, entityId: note.id })}>Delete</button>
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'addTask', projectId: bundle.project.id, title: 'New admin task' })}>Add Task</button>
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'addTimeline', projectId: bundle.project.id, title: 'Planning update' })}>Add Timeline</button>
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'addFile', projectId: bundle.project.id, fileName: 'Spec.pdf', fileUrl: 'https://example.com/spec.pdf' })}>Add File</button>
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'addAsset', projectId: bundle.project.id, assetName: 'Logo', assetType: 'image', assetUrl: 'https://example.com/logo.png' })}>Add Asset</button>
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'addNote', projectId: bundle.project.id, noteBody: 'Credential rotation due next sprint.' })}>Add Note</button>
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'addCredential', projectId: bundle.project.id, credentialName: 'AWS Access Key', credentialValueMasked: 'AKIA********' })}>Add Credential</button>
-                <button className="rounded border px-2 py-1 text-xs" onClick={() => postAction({ action: 'upsertIntegration', projectId: bundle.project.id, githubUrl: 'https://github.com/Martease/Portfolio-2', deploymentUrl: 'https://mamvo-labs.com' })}>Set Integrations</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => addTask(bundle.project.id)}>Add Task</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => addTimeline(bundle.project.id)}>Add Timeline</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => addFile(bundle.project.id)}>Add File</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => addAsset(bundle.project.id)}>Add Asset</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => addNote(bundle.project.id)}>Add Note</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => addCredential(bundle.project.id)}>Add Credential</button>
+                <button className="rounded border px-2 py-1 text-xs" onClick={() => setIntegrations(bundle.project.id)}>Set Integrations</button>
               </div>
             </article>
           ))}

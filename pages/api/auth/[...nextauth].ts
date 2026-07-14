@@ -56,6 +56,8 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      const nowInSeconds = Math.floor(Date.now() / 1000)
+
       if (user?.id) {
         const rememberMe = Boolean((user as { rememberMe?: boolean }).rememberMe)
         const maxAge = rememberMe ? LONG_SESSION_MAX_AGE : SHORT_SESSION_MAX_AGE
@@ -65,8 +67,20 @@ export const authOptions: NextAuthOptions = {
         token.contractId = (user as { contractId?: string }).contractId
         token.rememberMe = rememberMe
         token.maxAge = maxAge
-        token.exp = Math.floor(Date.now() / 1000) + maxAge
+        token.issuedAt = nowInSeconds
+        token.exp = nowInSeconds + maxAge
       }
+
+      if (!user?.id && token.id) {
+        const issuedAt = Number(token.issuedAt || token.iat || nowInSeconds)
+        const tokenMaxAge = Number(token.maxAge || LONG_SESSION_MAX_AGE)
+        const isExpired = nowInSeconds >= issuedAt + tokenMaxAge
+
+        if (isExpired) {
+          return {}
+        }
+      }
+
       return token
     },
     async session({ session, token }) {

@@ -1,6 +1,7 @@
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import Link from 'next/link'
 import Header from '../../components/Header'
+import Pill from '../../components/ui/Pill'
 import SectionHeading from '../../components/ui/SectionHeading'
 import SurfaceCard from '../../components/ui/SurfaceCard'
 import { getProjectBySlug, portfolioProjects } from '../../lib/portfolioData'
@@ -35,9 +36,7 @@ export default function PortfolioProjectPage({
           <h2 className="font-display text-2xl text-brand-ink">Tech Stack</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {project.techStack.map((item) => (
-              <span key={item} className="rounded-full bg-brand-sand px-3 py-1 text-sm text-brand-ink">
-                {item}
-              </span>
+              <Pill key={item}>{item}</Pill>
             ))}
           </div>
         </SurfaceCard>

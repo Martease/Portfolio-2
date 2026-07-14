@@ -148,6 +148,37 @@ export async function createCrmClient(params: {
   return inserted.rows[0]
 }
 
+export async function updateCrmClient(params: {
+  crmClientId: number
+  contactName?: string
+  contactEmail?: string
+  contactPhone?: string
+  status?: string
+  tags?: string[]
+}) {
+  const updated = await query<DbCrmClientRow>(
+    `UPDATE crm_client
+       SET contact_name = COALESCE($1, contact_name),
+           contact_email = COALESCE($2, contact_email),
+           contact_phone = COALESCE($3, contact_phone),
+           status = COALESCE($4, status),
+           tags = COALESCE($5::text[], tags),
+           updated_at = NOW()
+     WHERE id = $6
+     RETURNING *`,
+    [
+      params.contactName || null,
+      params.contactEmail || null,
+      params.contactPhone || null,
+      params.status || null,
+      params.tags || null,
+      params.crmClientId,
+    ]
+  )
+
+  return updated.rows[0] || null
+}
+
 export async function addCrmNote(crmClientId: number, body: string, createdBy: string) {
   await query(
     `INSERT INTO crm_note (crm_client_id, body, created_by)
@@ -156,12 +187,20 @@ export async function addCrmNote(crmClientId: number, body: string, createdBy: s
   )
 }
 
+export async function deleteCrmNote(crmClientId: number, noteId: number) {
+  await query('DELETE FROM crm_note WHERE crm_client_id = $1 AND id = $2', [crmClientId, noteId])
+}
+
 export async function addCrmFile(crmClientId: number, fileName: string, fileUrl: string, uploadedBy: string) {
   await query(
     `INSERT INTO crm_file (crm_client_id, file_name, file_url, uploaded_by)
      VALUES ($1, $2, $3, $4)`,
     [crmClientId, fileName, fileUrl, uploadedBy]
   )
+}
+
+export async function deleteCrmFile(crmClientId: number, fileId: number) {
+  await query('DELETE FROM crm_file WHERE crm_client_id = $1 AND id = $2', [crmClientId, fileId])
 }
 
 export async function addCrmEmail(
@@ -176,6 +215,19 @@ export async function addCrmEmail(
      VALUES ($1, $2, $3, $4, $5)`,
     [crmClientId, direction, subject, body, isRead]
   )
+}
+
+export async function markCrmEmailRead(crmClientId: number, emailId: number, isRead: boolean) {
+  await query(
+    `UPDATE crm_email
+       SET is_read = $1
+     WHERE crm_client_id = $2 AND id = $3`,
+    [isRead, crmClientId, emailId]
+  )
+}
+
+export async function deleteCrmEmail(crmClientId: number, emailId: number) {
+  await query('DELETE FROM crm_email WHERE crm_client_id = $1 AND id = $2', [crmClientId, emailId])
 }
 
 export async function listAdminProjects() {
@@ -219,6 +271,10 @@ export async function addAdminProjectTask(projectId: number, title: string, assi
   )
 }
 
+export async function deleteAdminProjectTask(projectId: number, taskId: number) {
+  await query('DELETE FROM project_task WHERE project_id = $1 AND id = $2', [projectId, taskId])
+}
+
 export async function setAdminProjectTaskStatus(projectId: number, taskId: number, status: string) {
   await query(
     `UPDATE project_task
@@ -237,12 +293,20 @@ export async function addAdminProjectTimeline(projectId: number, title: string, 
   )
 }
 
+export async function deleteAdminProjectTimeline(projectId: number, timelineId: number) {
+  await query('DELETE FROM project_timeline_event WHERE project_id = $1 AND id = $2', [projectId, timelineId])
+}
+
 export async function addAdminProjectFile(projectId: number, fileName: string, fileUrl: string, fileType?: string) {
   await query(
     `INSERT INTO project_file (project_id, file_name, file_url, file_type, uploaded_by_role)
      VALUES ($1, $2, $3, $4, 'admin')`,
     [projectId, fileName, fileUrl, fileType || null]
   )
+}
+
+export async function deleteAdminProjectFile(projectId: number, fileId: number) {
+  await query('DELETE FROM project_file WHERE project_id = $1 AND id = $2', [projectId, fileId])
 }
 
 export async function addAdminProjectAsset(projectId: number, assetName: string, assetType: string, assetUrl: string) {
@@ -253,6 +317,10 @@ export async function addAdminProjectAsset(projectId: number, assetName: string,
   )
 }
 
+export async function deleteAdminProjectAsset(projectId: number, assetId: number) {
+  await query('DELETE FROM project_asset WHERE project_id = $1 AND id = $2', [projectId, assetId])
+}
+
 export async function addAdminProjectNote(projectId: number, body: string) {
   await query(
     `INSERT INTO project_note (project_id, author_role, note_type, body)
@@ -261,12 +329,20 @@ export async function addAdminProjectNote(projectId: number, body: string) {
   )
 }
 
+export async function deleteAdminProjectNote(projectId: number, noteId: number) {
+  await query('DELETE FROM project_note WHERE project_id = $1 AND id = $2', [projectId, noteId])
+}
+
 export async function addAdminProjectCredential(projectId: number, credentialName: string, credentialValueMasked: string) {
   await query(
     `INSERT INTO project_credential (project_id, credential_name, credential_value_masked)
      VALUES ($1, $2, $3)`,
     [projectId, credentialName, credentialValueMasked]
   )
+}
+
+export async function deleteAdminProjectCredential(projectId: number, credentialId: number) {
+  await query('DELETE FROM project_credential WHERE project_id = $1 AND id = $2', [projectId, credentialId])
 }
 
 export async function upsertAdminProjectIntegration(projectId: number, githubUrl?: string, deploymentUrl?: string) {

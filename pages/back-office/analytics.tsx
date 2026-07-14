@@ -46,6 +46,8 @@ export default function AnalyticsPage() {
           <div className="mt-4 flex gap-3 text-sm">
             <a href="/back-office" className="rounded bg-white/10 px-3 py-2">Back Office Home</a>
             <a href="/back-office/executive-dashboard" className="rounded bg-white/10 px-3 py-2">Executive Dashboard</a>
+            <a href="/back-office/infrastructure" className="rounded bg-white/10 px-3 py-2">Infrastructure</a>
+            <a href="/api/back-office/export/analytics" className="rounded bg-white/10 px-3 py-2">Export CSV</a>
           </div>
         </header>
 
@@ -65,9 +67,24 @@ export default function AnalyticsPage() {
             <h2 className="text-lg font-semibold text-slate-900">Revenue by Month</h2>
             <ul className="mt-3 space-y-2 text-sm text-slate-700">
               {(payload?.monthlyRevenue || []).map((item) => (
-                <li key={item.month} className="flex items-center justify-between rounded bg-slate-50 px-3 py-2">
-                  <span>{item.month}</span>
-                  <span>{money(item.totalCents)}</span>
+                <li key={item.month} className="rounded bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span>{item.month}</span>
+                    <span>{money(item.totalCents)}</span>
+                  </div>
+                  <div className="mt-2 h-2 rounded-full bg-slate-200">
+                    <div
+                      className="h-2 rounded-full bg-emerald-600"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          ((item.totalCents || 0) /
+                            Math.max(...(payload?.monthlyRevenue || []).map((row) => row.totalCents), 1)) *
+                            100
+                        )}%`,
+                      }}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>

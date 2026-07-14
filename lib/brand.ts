@@ -11,6 +11,11 @@ export const brandFoundation = {
   vision:
     'Become the trusted engineering partner for growth-stage founders and operators who need reliable systems that scale.',
   tagline: 'Precision-built software for serious growth.',
+  logo: {
+    markSrc: '/assets/images/IMG_0942.PNG',
+    alt: 'Mamvo Labs logo',
+    placement: ['header-left', 'favicon'],
+  },
   palette: {
     ink: '#0f172a',
     slate: '#334155',
@@ -32,5 +37,5 @@ export const publicNavItems: NavItem[] = [
   { label: 'Services', href: '/services' },
   { label: 'Portfolio', href: '/portfolio' },
   { label: 'Contact', href: '/contact' },
-  { label: 'Client Login', href: '/client-portal' },
+  { label: 'Client Login', href: '/login' },
 ]

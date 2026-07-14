@@ -1,5 +1,8 @@
+import type { GetServerSidePropsContext } from 'next'
+import { getServerSession } from 'next-auth/next'
 import { useSession } from 'next-auth/react'
 import { FormEvent, useEffect, useState } from 'react'
+import { authOptions } from '../api/auth/[...nextauth]'
 
 export default function ClientContractsPage() {
   const { data: session, status } = useSession()
@@ -148,7 +151,39 @@ export default function ClientContractsPage() {
             ))}
           </ul>
         </section>
+
+        <section className="rounded-xl border bg-white p-4 lg:col-span-2">
+          <h2 className="font-semibold text-slate-900">Future</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            Electronic signatures are planned for a future release. The current module supports signed-copy upload and client download workflows.
+          </p>
+        </section>
       </div>
     </main>
   )
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions)
+
+  if (!session?.user) {
+    const callbackUrl = encodeURIComponent('/client-portal/contracts')
+    return {
+      redirect: {
+        destination: `/login?callbackUrl=${callbackUrl}`,
+        permanent: false,
+      },
+    }
+  }
+
+  if (!session.user.role || !['client', 'admin'].includes(session.user.role)) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    }
+  }
+
+  return { props: {} }
 }

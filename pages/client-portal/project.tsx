@@ -1,5 +1,8 @@
+import type { GetServerSidePropsContext } from 'next'
+import { getServerSession } from 'next-auth/next'
 import { useSession } from 'next-auth/react'
 import { FormEvent, useEffect, useState } from 'react'
+import { authOptions } from '../api/auth/[...nextauth]'
 
 type WorkspaceResponse = {
   project: { id: number; title: string; status: string; progress_percent: number }
@@ -17,6 +20,11 @@ export default function ClientProjectPage() {
   const [workspace, setWorkspace] = useState<WorkspaceResponse | null>(null)
   const [error, setError] = useState('')
   const [taskTitle, setTaskTitle] = useState('')
+  const [milestoneTitle, setMilestoneTitle] = useState('')
+  const [deliverableTitle, setDeliverableTitle] = useState('')
+  const [deliverableDescription, setDeliverableDescription] = useState('')
+  const [timelineTitle, setTimelineTitle] = useState('')
+  const [timelineDetail, setTimelineDetail] = useState('')
   const [noteBody, setNoteBody] = useState('')
   const [feedbackBody, setFeedbackBody] = useState('')
   const [fileName, setFileName] = useState('')
@@ -61,6 +69,37 @@ export default function ClientProjectPage() {
     setTaskTitle('')
   }
 
+  async function submitMilestone(event: FormEvent) {
+    event.preventDefault()
+    if (!milestoneTitle) return
+    await runAction({ action: 'addMilestone', title: milestoneTitle })
+    setMilestoneTitle('')
+  }
+
+  async function submitDeliverable(event: FormEvent) {
+    event.preventDefault()
+    if (!deliverableTitle) return
+    await runAction({
+      action: 'addDeliverable',
+      title: deliverableTitle,
+      description: deliverableDescription || undefined,
+    })
+    setDeliverableTitle('')
+    setDeliverableDescription('')
+  }
+
+  async function submitTimelineEvent(event: FormEvent) {
+    event.preventDefault()
+    if (!timelineTitle) return
+    await runAction({
+      action: 'addTimelineEvent',
+      title: timelineTitle,
+      detail: timelineDetail || undefined,
+    })
+    setTimelineTitle('')
+    setTimelineDetail('')
+  }
+
   async function submitNote(event: FormEvent) {
     event.preventDefault()
     if (!noteBody) return
@@ -99,6 +138,10 @@ export default function ClientProjectPage() {
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <section className="rounded-xl border bg-white p-4">
             <h2 className="font-semibold text-slate-900">Milestones</h2>
+            <form className="mt-2 flex gap-2" onSubmit={submitMilestone}>
+              <input value={milestoneTitle} onChange={(event) => setMilestoneTitle(event.target.value)} placeholder="New milestone" className="w-full rounded border px-3 py-2" />
+              <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Add</button>
+            </form>
             <ul className="mt-2 space-y-2 text-sm">
               {workspace.milestones.map((item) => (
                 <li key={item.id} className="rounded bg-slate-50 px-3 py-2">{item.title}</li>
@@ -108,6 +151,11 @@ export default function ClientProjectPage() {
 
           <section className="rounded-xl border bg-white p-4">
             <h2 className="font-semibold text-slate-900">Timeline</h2>
+            <form className="mt-2 grid gap-2" onSubmit={submitTimelineEvent}>
+              <input value={timelineTitle} onChange={(event) => setTimelineTitle(event.target.value)} placeholder="Timeline event title" className="w-full rounded border px-3 py-2" />
+              <input value={timelineDetail} onChange={(event) => setTimelineDetail(event.target.value)} placeholder="Event detail (optional)" className="w-full rounded border px-3 py-2" />
+              <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Add Event</button>
+            </form>
             <ul className="mt-2 space-y-2 text-sm">
               {workspace.timeline.map((item) => (
                 <li key={item.id} className="rounded bg-slate-50 px-3 py-2">{item.title}</li>
@@ -141,6 +189,11 @@ export default function ClientProjectPage() {
 
           <section className="rounded-xl border bg-white p-4">
             <h2 className="font-semibold text-slate-900">Deliverables</h2>
+            <form className="mt-2 grid gap-2" onSubmit={submitDeliverable}>
+              <input value={deliverableTitle} onChange={(event) => setDeliverableTitle(event.target.value)} placeholder="Deliverable title" className="w-full rounded border px-3 py-2" />
+              <input value={deliverableDescription} onChange={(event) => setDeliverableDescription(event.target.value)} placeholder="Deliverable description (optional)" className="w-full rounded border px-3 py-2" />
+              <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Add Deliverable</button>
+            </form>
             <ul className="mt-2 space-y-2 text-sm">
               {workspace.deliverables.map((item) => (
                 <li key={item.id} className="rounded bg-slate-50 px-3 py-2">{item.title}</li>
@@ -193,4 +246,29 @@ export default function ClientProjectPage() {
       )}
     </main>
   )
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions)
+
+  if (!session?.user) {
+    const callbackUrl = encodeURIComponent('/client-portal/project')
+    return {
+      redirect: {
+        destination: `/login?callbackUrl=${callbackUrl}`,
+        permanent: false,
+      },
+    }
+  }
+
+  if (!session.user.role || !['client', 'admin'].includes(session.user.role)) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    }
+  }
+
+  return { props: {} }
 }

@@ -214,6 +214,7 @@ export default function BackOfficePage({ authenticated }: InferGetServerSideProp
                 <a href="/back-office/projects" className="rounded-full bg-white/10 px-3 py-2">Project Workspace</a>
                 <a href="/back-office/wiki" className="rounded-full bg-white/10 px-3 py-2">Knowledge Base</a>
                 <a href="/back-office/analytics" className="rounded-full bg-white/10 px-3 py-2">Analytics</a>
+                <a href="/back-office/infrastructure" className="rounded-full bg-white/10 px-3 py-2">Infrastructure</a>
                 <a href="/back-office/audit-logs" className="rounded-full bg-white/10 px-3 py-2">Audit Logs</a>
               </div>
             </div>

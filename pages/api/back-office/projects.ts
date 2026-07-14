@@ -7,6 +7,12 @@ import {
   addAdminProjectNote,
   addAdminProjectTask,
   addAdminProjectTimeline,
+  deleteAdminProjectAsset,
+  deleteAdminProjectCredential,
+  deleteAdminProjectFile,
+  deleteAdminProjectNote,
+  deleteAdminProjectTask,
+  deleteAdminProjectTimeline,
   listAdminProjects,
   setAdminProjectTaskStatus,
   upsertAdminProjectIntegration,
@@ -24,15 +30,22 @@ import { logAdminAudit } from '../../../lib/auditLogStore'
 type ActionBody = {
   action?:
     | 'addTask'
+    | 'deleteTask'
     | 'setTaskStatus'
     | 'addTimeline'
+    | 'deleteTimeline'
     | 'addFile'
+    | 'deleteFile'
     | 'addAsset'
+    | 'deleteAsset'
     | 'addNote'
+    | 'deleteNote'
     | 'addCredential'
+    | 'deleteCredential'
     | 'upsertIntegration'
   projectId?: number
   taskId?: number
+  entityId?: number
   title?: string
   assignee?: string
   status?: string
@@ -75,12 +88,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const payload = (req.body || {}) as ActionBody
       const action = validateEnum(payload.action, 'action', [
         'addTask',
+        'deleteTask',
         'setTaskStatus',
         'addTimeline',
+        'deleteTimeline',
         'addFile',
+        'deleteFile',
         'addAsset',
+        'deleteAsset',
         'addNote',
+        'deleteNote',
         'addCredential',
+        'deleteCredential',
         'upsertIntegration',
       ] as const)
 
@@ -101,12 +120,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             validateEnum(payload.status, 'status', ['Pending', 'In Progress', 'Done', 'Blocked'] as const)
           )
           break
+        case 'deleteTask':
+          await deleteAdminProjectTask(
+            projectId,
+            validateInteger(payload.entityId, 'entityId', { min: 1 })
+          )
+          break
         case 'addTimeline':
           await addAdminProjectTimeline(
             projectId,
             validateString(payload.title, 'title', { min: 2, max: 180 }),
             validateOptionalString(payload.detail, 'detail', { min: 2, max: 1200 }),
             validateOptionalString(payload.eventDate, 'eventDate', { min: 8, max: 40 })
+          )
+          break
+        case 'deleteTimeline':
+          await deleteAdminProjectTimeline(
+            projectId,
+            validateInteger(payload.entityId, 'entityId', { min: 1 })
           )
           break
         case 'addFile':
@@ -117,6 +148,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             validateOptionalString(payload.fileType, 'fileType', { min: 2, max: 60 })
           )
           break
+        case 'deleteFile':
+          await deleteAdminProjectFile(
+            projectId,
+            validateInteger(payload.entityId, 'entityId', { min: 1 })
+          )
+          break
         case 'addAsset':
           await addAdminProjectAsset(
             projectId,
@@ -125,14 +162,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             validateUrl(payload.assetUrl, 'assetUrl')
           )
           break
+        case 'deleteAsset':
+          await deleteAdminProjectAsset(
+            projectId,
+            validateInteger(payload.entityId, 'entityId', { min: 1 })
+          )
+          break
         case 'addNote':
           await addAdminProjectNote(projectId, validateString(payload.noteBody, 'noteBody', { min: 2, max: 4000 }))
+          break
+        case 'deleteNote':
+          await deleteAdminProjectNote(
+            projectId,
+            validateInteger(payload.entityId, 'entityId', { min: 1 })
+          )
           break
         case 'addCredential':
           await addAdminProjectCredential(
             projectId,
             validateString(payload.credentialName, 'credentialName', { min: 2, max: 120 }),
             validateString(payload.credentialValueMasked, 'credentialValueMasked', { min: 4, max: 256 })
+          )
+          break
+        case 'deleteCredential':
+          await deleteAdminProjectCredential(
+            projectId,
+            validateInteger(payload.entityId, 'entityId', { min: 1 })
           )
           break
         case 'upsertIntegration':

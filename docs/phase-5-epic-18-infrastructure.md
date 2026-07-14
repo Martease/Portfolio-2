@@ -34,6 +34,27 @@ Added in this phase:
 - `prisma/schema.prisma`
 - `lib/prisma.ts`
 - Prisma package dependencies and npm scripts
+- `.env.example` environment template
+- `vercel.json` deployment config
+- `GET /api/back-office/infrastructure` protected stack status endpoint
+
+## Epic 18 Deliverables
+
+- Frontend stack confirmed: Next.js + TypeScript + Tailwind CSS
+- Backend stack confirmed: Next.js API Routes + Prisma ORM (available for phased migration)
+- Database confirmed: PostgreSQL (`DATABASE_URL`)
+- Authentication confirmed: Auth.js (NextAuth)
+- Storage integration confirmed: Google Drive API + Google Docs API
+- Deployment target confirmed: Vercel (`vercel.json`)
+
+### Infrastructure Status API
+
+Endpoint:
+- `GET /api/back-office/infrastructure`
+
+Behavior:
+- Requires authenticated admin session.
+- Returns deployment-safe booleans for stack readiness (no secret values exposed).
 
 ## Migration Strategy (No Breaking Changes)
 

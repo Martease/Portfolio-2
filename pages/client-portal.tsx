@@ -1,9 +1,12 @@
+import type { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next'
+import { getServerSession } from 'next-auth/next'
 import { signOut, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { authOptions } from './api/auth/[...nextauth]'
 
 const API_BASE = '/api'
 
-export default function ClientPortal() {
+export default function ClientPortal({ contractId }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { data: session, status } = useSession()
   const [dashboard, setDashboard] = useState<any>(null)
   const [error, setError] = useState('')
@@ -58,7 +61,7 @@ export default function ClientPortal() {
     )
   }
 
-  if (!session.user?.contractId) {
+  if (!contractId) {
     return (
       <div className="p-8 max-w-3xl mx-auto">
         <h2 className="text-2xl font-semibold mb-4">Client Portal</h2>
@@ -135,6 +138,32 @@ export default function ClientPortal() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900">Contracts</h3>
+              <ul className="mt-3 space-y-2 text-sm text-slate-700">
+                {dashboard.contracts.length === 0 && <li>No contract documents available.</li>}
+                {dashboard.contracts.slice(0, 5).map((item: any) => (
+                  <li key={item.id} className="rounded-lg bg-slate-50 px-3 py-2">
+                    <p className="font-medium">{item.title}</p>
+                    <div className="mt-1 flex flex-wrap gap-3">
+                      {item.pdf_url ? (
+                        <a href={item.pdf_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                          Client download (PDF)
+                        </a>
+                      ) : null}
+                      {item.signed_copy_url ? (
+                        <a href={item.signed_copy_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                          Signed copy
+                        </a>
+                      ) : (
+                        <span className="text-slate-500">Awaiting signed copy</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-900">Files</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-700">
                 {dashboard.files.length === 0 && <li>No files uploaded yet.</li>}
@@ -169,4 +198,33 @@ export default function ClientPortal() {
       )}
     </div>
   )
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions)
+
+  if (!session?.user) {
+    const callbackUrl = encodeURIComponent('/client-portal')
+    return {
+      redirect: {
+        destination: `/login?callbackUrl=${callbackUrl}`,
+        permanent: false,
+      },
+    }
+  }
+
+  if (session.user.role === 'admin') {
+    return {
+      redirect: {
+        destination: '/back-office',
+        permanent: false,
+      },
+    }
+  }
+
+  return {
+    props: {
+      contractId: session.user.contractId || null,
+    },
+  }
 }
