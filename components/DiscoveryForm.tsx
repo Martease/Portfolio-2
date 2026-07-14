@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useSearchParams } from 'next/navigation'
 import Button from './ui/Button'
 import FormField from './ui/FormField'
 import { DiscoveryFormData, DiscoveryFormSchema } from '../lib/types'
@@ -26,6 +27,7 @@ type SubmitDiscoveryResponse = {
 }
 
 export default function DiscoveryForm() {
+  const searchParams = useSearchParams()
   const [formStartedAt] = useState(() => Date.now())
   const [company, setCompany] = useState('')
   const [submitError, setSubmitError] = useState('')
@@ -54,12 +56,20 @@ export default function DiscoveryForm() {
   const selectedService = watch('serviceType')
 
   useEffect(() => {
-    if (!toastMessage) return
+    const serviceParam = searchParams.get('service')
+    if (serviceParam && SERVICE_TYPES.includes(serviceParam as any)) {
+      setValue('serviceType', serviceParam as any, { 
+        shouldDirty: true, 
+        shouldValidate: true 
+      })
+    }
+  }, [searchParams, setValue])
 
+  useEffect(() => {
+    if (!toastMessage) return
     const timeoutId = window.setTimeout(() => {
       setToastMessage('')
     }, 4000)
-
     return () => {
       window.clearTimeout(timeoutId)
     }
@@ -67,25 +77,21 @@ export default function DiscoveryForm() {
 
   const trackDiscoverySubmitted = (data: DiscoveryFormData) => {
     if (typeof window === 'undefined') return
-
     const eventPayload = {
       event: 'discovery_form_submitted',
       serviceType: data.serviceType,
       budgetRange: data.budgetRange,
     }
-
     const maybeDataLayer = (window as unknown as { dataLayer?: unknown }).dataLayer
     if (Array.isArray(maybeDataLayer)) {
       maybeDataLayer.push(eventPayload)
     }
-
     window.dispatchEvent(new CustomEvent('discovery:submitted', { detail: eventPayload }))
   }
 
   const onSubmit = async (data: DiscoveryFormData) => {
     setSubmitError('')
     setSubmitted(false)
-
     const response = await fetch('/api/submit-discovery', {
       method: 'POST',
       headers: {
@@ -97,13 +103,10 @@ export default function DiscoveryForm() {
         formStartedAt,
       }),
     })
-
     const result = (await response.json().catch(() => ({ message: 'Failed to submit request.' }))) as SubmitDiscoveryResponse
-
     if (!response.ok) {
       throw new Error(result.message || 'Failed to submit request.')
     }
-
     trackDiscoverySubmitted(data)
     setSubmitted(true)
     setToastMessage('Discovery request sent successfully.')
@@ -232,3 +235,4 @@ export default function DiscoveryForm() {
     </form>
   )
 }
+
