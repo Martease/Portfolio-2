@@ -99,6 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         description: data.description,
         preferred_platform: data.preferredPlatform?.trim() || null,
         budget_range: data.budgetRange,
+        status: 'PENDING_REVIEW',
       },
     })
   } catch (error) {
