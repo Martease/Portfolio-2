@@ -346,3 +346,14 @@ model AuditLog {
   metadata_json Json
   created_at   DateTime @default(now())
 }
+
+model DiscoveryFormSubmission {
+  id                 Int      @id @default(autoincrement())
+  full_name          String
+  email              String
+  service_type       String
+  description        String
+  preferred_platform String?
+  budget_range       String
+  created_at         DateTime @default(now())
+}
