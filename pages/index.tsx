@@ -231,7 +231,7 @@ export default function Home() {
                     href="/contact"
                     className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-ink transition-colors hover:bg-brand-sand"
                   >
-                    Contact Mamvo Labs
+                    Contact Bycra
                   </Link>
                 </div>
               </SurfaceCard>

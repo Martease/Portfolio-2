@@ -5,15 +5,14 @@ export type NavItem = {
 }
 
 export const brandFoundation = {
-  companyName: 'Mamvo Labs',
-  mission:
-    'Build practical, high-performance software that helps ambitious teams move from idea to execution with confidence.',
-  vision:
-    'Become the trusted engineering partner for growth-stage founders and operators who need reliable systems that scale.',
-  tagline: 'Precision-built software for serious growth.',
+  companyName: 'Bycra',
+  mission: 'We transform ideas into meaningful digital experiences through thoughtful design, modern technology, and intentional craftsmanship.',
+  methodology:'How do we accomplish our mission? Learn -> Build -> Create -> Share',
+  vision:  'Inspiring others to creativly tell their story.',
+  tagline: 'Architecting Creative Stories.',
   logo: {
     markSrc: '/assets/images/IMG_0942.PNG',
-    alt: 'Mamvo Labs logo',
+    alt: 'Bycra logo',
     placement: ['header-left', 'favicon'],
   },
   palette: {

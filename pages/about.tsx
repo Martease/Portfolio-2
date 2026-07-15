@@ -37,7 +37,7 @@ export default function AboutPage() {
         <SectionHeading
           eyebrow="About"
           title="From trade discipline to product engineering"
-          description="Mamvo Labs is built on execution discipline, business ownership, and modern software engineering craft."
+          description="Bycra is built on execution discipline, business ownership, and modern software engineering craft."
           align="left"
         />
 
