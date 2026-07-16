@@ -189,7 +189,7 @@ export default function Home() {
 
         <SectionShell id="current-focus">
             <Reveal>
-              <SectionHeading title="Current Focus" description="Where Mamvo Labs is investing build energy right now." />
+              <SectionHeading title="Current Focus" description="Where Bycra is investing build energy right now." />
             </Reveal>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {currentFocusItems.map((item, index) => (

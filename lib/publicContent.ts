@@ -30,7 +30,7 @@ export const currentFocusItems = [
 export const testimonials = [
   {
     quote:
-      'Mamvo Labs transformed our web presence into something that finally reflects our level of professionalism. We started getting better-qualified inbound leads within weeks.',
+      'Bycra transformed our web presence into something that finally reflects our level of professionalism. We started getting better-qualified inbound leads within weeks.',
     person: 'Operations Lead, Home Services Brand',
   },
   {
