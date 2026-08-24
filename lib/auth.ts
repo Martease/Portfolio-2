@@ -1,19 +1,29 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from 'crypto'
+import bcrypt from 'bcryptjs'
 
 const HASH_ENCODING = 'hex'
 const SCRYPT_KEYLEN = 64
+
+const parsePositiveInt = (value: string | undefined, fallback: number) => {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const BCRYPT_ROUNDS = () => parsePositiveInt(process.env.BCRYPT_SALT_ROUNDS, 12)
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
 export function hashPassword(password: string) {
-  const salt = randomBytes(16).toString(HASH_ENCODING)
-  const hash = scryptSync(password, salt, SCRYPT_KEYLEN).toString(HASH_ENCODING)
-  return `${salt}:${hash}`
+  return bcrypt.hashSync(password, BCRYPT_ROUNDS())
 }
 
 export function verifyPassword(password: string, stored: string) {
+  if (isBcryptHash(stored)) {
+    return bcrypt.compareSync(password, stored)
+  }
+
   const [salt, hash] = stored.split(':')
   if (!salt || !hash) return false
 
@@ -22,6 +32,14 @@ export function verifyPassword(password: string, stored: string) {
 
   if (storedBuffer.length !== derived.length) return false
   return timingSafeEqual(storedBuffer, derived)
+}
+
+export function isBcryptHash(stored: string) {
+  return /^\$2[aby]\$\d{2}\$/.test(stored)
+}
+
+export function isLegacyPasswordHash(stored: string) {
+  return !isBcryptHash(stored)
 }
 
 export function createResetToken() {

@@ -3,11 +3,11 @@ export default function About() {
     <section id="about" className="py-20 px-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-md text-gray-900">
         <h1 className="text-3xl md:text-4xl font-semibold mb-6">
-          About Mamvo Labs: Architecture at the Intersection of Logic and Innovation
+          About Bycra: Architecture at the Intersection of Logic and Innovation
         </h1>
 
         <p className="text-gray-700 leading-relaxed mb-8">
-          At Mamvo Labs, we don't just write code; we architect digital infrastructure designed to perform, scale, and endure. Founded by and built on the principles of precision and continuous improvement, Mamvo Labs serves as the technical engine for ambitious projects and enterprise-level solutions.
+          At Bycra, we don't just write code; we architect digital infrastructure designed to perform, scale, and endure. Founded by and built on the principles of precision and continuous improvement, Bycra serves as the technical engine for ambitious projects and enterprise-level solutions.
         </p>
 
         <h2 className="text-2xl font-semibold mt-6 mb-3">The Philosophy</h2>

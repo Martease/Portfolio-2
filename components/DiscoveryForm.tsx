@@ -6,12 +6,14 @@ import Button from './ui/Button'
 import FormField from './ui/FormField'
 import { DiscoveryFormData, DiscoveryFormSchema } from '../lib/types'
 
-const SERVICE_TYPES: DiscoveryFormData['serviceType'][] = [
-  'landing-page',
-  'multi-page',
-  'email-template',
-  'updates',
-  'custom',
+const SERVICE_OPTIONS: Array<{
+  value: DiscoveryFormData['serviceType']
+  label: string
+}> = [
+  { value: 'launch', label: 'Launch' },
+  { value: 'business', label: 'Business' },
+  { value: 'scale', label: 'Scale' },
+  { value: 'custom-project', label: 'Custom Project' },
 ]
 
 const BUDGET_RANGES = [
@@ -44,7 +46,7 @@ export default function DiscoveryForm() {
   } = useForm<DiscoveryFormData>({
     resolver: zodResolver(DiscoveryFormSchema),
     defaultValues: {
-      serviceType: 'custom',
+      serviceType: 'custom-project',
       budgetRange: '',
       preferredPlatform: '',
       description: '',
@@ -56,9 +58,12 @@ export default function DiscoveryForm() {
   const selectedService = watch('serviceType')
 
   useEffect(() => {
+    const packageParam = searchParams.get('package')
     const serviceParam = searchParams.get('service')
-    if (serviceParam && SERVICE_TYPES.includes(serviceParam as any)) {
-      setValue('serviceType', serviceParam as any, { 
+    const selectedParam = packageParam || serviceParam
+
+    if (selectedParam && SERVICE_OPTIONS.some((option) => option.value === selectedParam)) {
+      setValue('serviceType', selectedParam as DiscoveryFormData['serviceType'], {
         shouldDirty: true, 
         shouldValidate: true 
       })
@@ -111,7 +116,7 @@ export default function DiscoveryForm() {
     setSubmitted(true)
     setToastMessage('Discovery request sent successfully.')
     reset({
-      serviceType: 'custom',
+      serviceType: 'custom-project',
       budgetRange: '',
       preferredPlatform: '',
       description: '',
@@ -166,17 +171,17 @@ export default function DiscoveryForm() {
       <div>
         <p className="text-sm font-semibold text-brand-ink">Service Type</p>
         <div className="mt-2 grid grid-cols-2 gap-3">
-          {SERVICE_TYPES.map((type) => (
+          {SERVICE_OPTIONS.map((option) => (
             <button
-              key={type}
+              key={option.value}
               type="button"
-              onClick={() => setValue('serviceType', type, { shouldDirty: true, shouldValidate: true })}
+              onClick={() => setValue('serviceType', option.value, { shouldDirty: true, shouldValidate: true })}
               className={[
                 'rounded-xl border px-3 py-2 text-left text-sm capitalize transition',
-                selectedService === type ? 'border-brand-ember bg-brand-sand text-brand-ink' : 'border-brand-cloud hover:border-brand-ember',
+                selectedService === option.value ? 'border-brand-ember bg-brand-sand text-brand-ink' : 'border-brand-cloud hover:border-brand-ember',
               ].join(' ')}
             >
-              {type.replace('-', ' ')}
+              {option.label}
             </button>
           ))}
         </div>

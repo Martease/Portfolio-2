@@ -4,6 +4,7 @@ import { ensureMethod } from '../../lib/apiGuards'
 import { CONTACT_EMAIL } from '../../lib/contactConfig'
 import { prisma } from '../../lib/prisma'
 import { checkRateLimit } from '../../lib/rateLimitStore'
+import { formatServiceTypeLabel } from '../../lib/serviceTypeLabels'
 import { DiscoveryFormSchema } from '../../lib/types'
 
 type SubmitDiscoveryResponse = {
@@ -89,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   const data = parsed.data
+  const serviceTypeLabel = formatServiceTypeLabel(data.serviceType)
 
   try {
     await prisma.discoveryFormSubmission.create({
@@ -136,13 +138,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       from: smtpUser,
       to: CONTACT_EMAIL,
       replyTo: data.email.trim(),
-      subject: `New Discovery: ${data.fullName} - ${data.serviceType}`,
+      subject: `New Discovery: ${data.fullName} - ${serviceTypeLabel}`,
       text: [
         'New discovery request received:',
         '',
         `Full Name: ${data.fullName}`,
         `Email: ${data.email}`,
-        `Service Type: ${data.serviceType}`,
+        `Service Type: ${serviceTypeLabel}`,
         `Budget Range: ${data.budgetRange}`,
         `Preferred Platform: ${data.preferredPlatform || 'Not provided'}`,
         '',

@@ -24,7 +24,7 @@ const storyBlocks = [
     body: 'Useful software should feel clear to the user, stable for the team, and flexible enough to evolve as the business grows.',
   },
   {
-    title: 'Mission',
+    title: 'Mission', 
     body: 'Help founders and operators turn complex ideas into dependable digital systems that create momentum and long-term value.',
   },
 ]

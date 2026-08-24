@@ -1,0 +1,483 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+  DESIGNER
+  DEVELOPER
+  ACCOUNT_MANAGER
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  BLOCKED
+  REVIEW
+  LAUNCHED
+  CARE
+  ARCHIVED
+}
+
+enum StageKey {
+  DISCOVERY
+  PROPOSAL
+  AGREEMENT
+  DEPOSIT
+  QUESTIONNAIRE
+  ASSETS_RECEIVED
+  DESIGN
+  DEVELOPMENT
+  REVIEW
+  LAUNCH
+  WEBSITE_CARE
+}
+
+enum StageStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum TaskStatus {
+  COMPLETED
+  IN_PROGRESS
+  UP_NEXT
+  WAITING_ON_CLIENT
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MessageAuthorType {
+  ADMIN
+  CLIENT
+  SYSTEM
+}
+
+enum DocumentType {
+  PROPOSAL
+  SIGNED_AGREEMENT
+  INVOICE
+  WEBSITE_CARE_AGREEMENT
+  DELIVERABLE
+  HANDOVER
+  OTHER
+}
+
+enum UploadCategory {
+  LOGO
+  BRAND_GUIDE
+  PRODUCT_PHOTOS
+  PRODUCT_CSV
+  MARKETING_ASSETS
+  BUSINESS_POLICIES
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  OVERDUE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum NotificationType {
+  PROJECT_UPDATED
+  INVOICE_PAID
+  MESSAGE_RECEIVED
+  LAUNCH_SCHEDULED
+  SYSTEM
+}
+
+enum MeetingType {
+  KICKOFF
+  REVIEW
+  LAUNCH
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CLIENT
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships UserMembership[]
+  projects    Project[]
+}
+
+model User {
+  id                   String   @id @default(uuid())
+  email                String   @unique
+  fullName             String
+  passwordHash         String
+  isActive             Boolean  @default(true)
+  emailVerifiedAt      DateTime?
+  mustChangePassword   Boolean  @default(false)
+  failedLoginAttempts  Int      @default(0)
+  lockoutUntil         DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  memberships          UserMembership[]
+  assignedTasks        Task[] @relation("AssignedTasks")
+  invitationsSent      Invitation[] @relation("InvitationSender")
+  activities           ActivityLog[]
+}
+
+model UserMembership {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  role           UserRole
+  createdAt      DateTime @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Invitation {
+  id             String   @id @default(uuid())
+  organizationId String
+  email          String
+  role           UserRole
+  tokenHash      String   @unique
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdByUserId String
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation("InvitationSender", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, email])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Project {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  name               String
+  status             ProjectStatus @default(PLANNING)
+  overallProgressPct Int      @default(0)
+  estimatedLaunchAt  DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stages             ProjectStage[]
+  tasks              Task[]
+  threads            MessageThread[]
+  documents          Document[]
+  uploads            UploadFile[]
+  invoices           Invoice[]
+  meetings           Meeting[]
+  notifications      Notification[]
+  supportTickets     SupportTicket[]
+  websiteCareLogs    WebsiteCareLog[]
+  activities         ActivityLog[]
+
+  @@index([organizationId, status])
+}
+
+model ProjectStage {
+  id             String      @id @default(uuid())
+  projectId      String
+  stageKey       StageKey
+  status         StageStatus @default(NOT_STARTED)
+  completionDate DateTime?
+  progressPct    Int         @default(0)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, stageKey])
+  @@index([projectId, status])
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  projectId      String
+  title          String
+  description    String?
+  priority       TaskPriority @default(MEDIUM)
+  status         TaskStatus   @default(UP_NEXT)
+  dueDate        DateTime?
+  assignedUserId String?
+  completedAt    DateTime?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedUser   User?   @relation("AssignedTasks", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([assignedUserId])
+}
+
+model MessageThread {
+  id          String   @id @default(uuid())
+  projectId   String
+  title       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@index([projectId])
+}
+
+model Message {
+  id            String            @id @default(uuid())
+  threadId       String
+  authorType     MessageAuthorType
+  authorUserId   String?
+  body           String
+  createdAt      DateTime @default(now())
+
+  thread         MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments    MessageAttachment[]
+
+  @@index([threadId, createdAt])
+}
+
+model MessageAttachment {
+  id          String   @id @default(uuid())
+  messageId   String
+  fileName    String
+  fileUrl     String
+  mimeType    String?
+  sizeBytes   Int?
+  createdAt   DateTime @default(now())
+
+  message     Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Document {
+  id             String       @id @default(uuid())
+  projectId       String
+  type            DocumentType
+  title           String
+  fileUrl         String
+  versionLabel    String?
+  uploadedByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, type])
+}
+
+model UploadFile {
+  id              String         @id @default(uuid())
+  projectId        String
+  category         UploadCategory
+  currentVersionId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  project          Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions         UploadFileVersion[]
+
+  @@index([projectId, category])
+}
+
+model UploadFileVersion {
+  id             String   @id @default(uuid())
+  uploadFileId   String
+  versionNumber  Int
+  fileName       String
+  fileUrl        String
+  mimeType       String?
+  sizeBytes      Int?
+  uploadedByUserId String?
+  createdAt      DateTime @default(now())
+
+  uploadFile     UploadFile @relation(fields: [uploadFileId], references: [id], onDelete: Cascade)
+
+  @@unique([uploadFileId, versionNumber])
+  @@index([uploadFileId])
+}
+
+model Invoice {
+  id               String       @id @default(uuid())
+  projectId         String
+  invoiceNumber     String       @unique
+  amountCents       Int
+  currency          String       @default("USD")
+  status            InvoiceStatus @default(OPEN)
+  stripeInvoiceId   String?
+  dueDate           DateTime?
+  paidAt            DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payments          Payment[]
+
+  @@index([projectId, status])
+}
+
+model Payment {
+  id                   String        @id @default(uuid())
+  invoiceId            String
+  stripePaymentIntentId String?
+  amountCents          Int
+  currency             String
+  status               PaymentStatus
+  receiptUrl           String?
+  paidAt               DateTime?
+  createdAt            DateTime @default(now())
+
+  invoice              Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, status])
+}
+
+model Meeting {
+  id          String      @id @default(uuid())
+  projectId    String
+  type         MeetingType
+  startsAt     DateTime
+  meetingUrl   String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, startsAt])
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  projectId    String
+  type         NotificationType
+  title        String
+  body         String?
+  isRead       Boolean          @default(false)
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
+
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isRead])
+}
+
+model SupportTicket {
+  id            String         @id @default(uuid())
+  projectId      String
+  title          String
+  description    String
+  priority       TicketPriority @default(MEDIUM)
+  status         TicketStatus   @default(OPEN)
+  createdByUserId String?
+  resolvedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
+}
+
+model WebsiteCareLog {
+  id                    String   @id @default(uuid())
+  projectId              String
+  healthScore            Int?
+  monthlyUpdateSummary   String?
+  maintenanceCompleted   String?
+  supportHoursRemaining  Decimal? @db.Decimal(8, 2)
+  loggedAt               DateTime @default(now())
+
+  project                Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, loggedAt])
+}
+
+model ActivityLog {
+  id             String   @id @default(uuid())
+  projectId       String?
+  actorUserId     String?
+  action          String
+  entityType      String
+  entityId        String?
+  metadataJson    Json
+  createdAt       DateTime @default(now())
+
+  project         Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  actor           User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@index([actorUserId, createdAt])
+}

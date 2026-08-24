@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma';
+import { formatServiceTypeLabel } from '../../lib/serviceTypeLabels';
 
 export default function LeadsAdmin({ leads }) {
   return (
@@ -17,7 +18,7 @@ export default function LeadsAdmin({ leads }) {
           {leads.map((lead: any) => (
             <tr key={lead.id}>
               <td>{lead.full_name}</td>
-              <td>{lead.service_type}</td>
+              <td>{formatServiceTypeLabel(lead.service_type)}</td>
               <td>{lead.budget_range}</td>
               <td><button>Approve & Send Payment</button></td>
             </tr>

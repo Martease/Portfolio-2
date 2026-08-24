@@ -6,40 +6,33 @@ import SurfaceCard from '../components/ui/SurfaceCard'
 import { brandFoundation } from '../lib/brand'
 import { featuredProjects } from '../lib/portfolioData'
 import { currentFocusItems, processSteps, testimonials } from '../lib/publicContent'
-import { formatUsd, servicesForCards } from '../lib/serviceCatalog'
 import Link from 'next/link'
 
 export default function Home() {
-  const handlePurchase = async (service: (typeof servicesForCards)[number]) => {
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          service: service.title,
-          amount: service.amount,
-        }),
-      })
-
-      const data = await response.json().catch(() => ({} as { message?: string; url?: string }))
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create checkout session')
-      }
-
-      if (!data.url) {
-        throw new Error('Checkout session did not return a redirect URL.')
-      }
-
-      window.location.href = data.url
-    } catch (error) {
-      console.error('Error creating checkout session:', error)
-      const message = error instanceof Error ? error.message : 'Failed to initiate checkout. Please try again.'
-      alert(message)
-    }
-  }
+  const corePackages = [
+    {
+      name: 'Launch',
+      price: '$750',
+      pages: '1-3 pages',
+      description: 'For new businesses that need a professional online presence.',
+      support: '14 days post-launch support',
+    },
+    {
+      name: 'Business',
+      featured: true,
+      price: '$1,200',
+      pages: '4-7 pages',
+      description: 'For growing businesses that need a complete website built around their goals.',
+      support: '30 days post-launch support',
+    },
+    {
+      name: 'Scale',
+      price: '$2,000+',
+      pages: '8+ pages',
+      description: 'For established businesses that need advanced functionality and a customized website.',
+      support: '30 days post-launch support',
+    },
+  ]
 
   return (
     <div className="text-brand-ink">
@@ -108,27 +101,32 @@ export default function Home() {
         <SectionShell id="services">
             <Reveal>
               <SectionHeading
-                title="Services"
-                description="Transparent starting prices for focused, production-ready service delivery."
+                title="3 Core Packages"
+                description="Simple tiers built for launch, growth, and scale so you can choose the right fit quickly."
               />
             </Reveal>
             <div className="mt-10 grid gap-6 md:grid-cols-3">
-              {servicesForCards.map((service, index) => (
-                <Reveal key={service.title} delayMs={110 + index * 120}>
-                  <button onClick={() => handlePurchase(service)} className="group w-full text-left">
-                    <SurfaceCard interactive className={service.bg}>
-                      <h3 className="font-display text-2xl text-brand-ink">{service.title}</h3>
-                      <p className="mt-2 text-brand-slate">{service.description}</p>
-                      {service.platforms ? (
-                        <p className="mt-3 text-sm font-semibold text-brand-slate">Platforms: {service.platforms}</p>
-                      ) : null}
-                      <p className="mt-4 font-semibold text-brand-ink">Starting at {formatUsd(service.amount)}</p>
-                      <div className="mt-4 inline-flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-3 shadow-sm transition duration-300 group-hover:bg-orange-100">
-                        <span className="font-medium text-orange-900">Purchase</span>
-                        <span className="text-orange-600">→</span>
+              {corePackages.map((pkg, index) => (
+                <Reveal key={pkg.name} delayMs={110 + index * 120}>
+                  <Link href={`/contact?package=${pkg.name.toLowerCase()}`} className="group block h-full">
+                    <SurfaceCard
+                      interactive
+                      className={`h-full border p-6 ${pkg.featured ? 'border-brand-ember bg-brand-sand' : 'border-brand-cloud/70 bg-white'}`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-slate">
+                        {pkg.name}
+                        {pkg.featured ? ' ⭐' : ''}
+                      </p>
+                      <h3 className="mt-2 font-display text-3xl text-brand-ink">{pkg.price}</h3>
+                      <p className="mt-3 text-sm font-semibold text-brand-slate">{pkg.pages}</p>
+                      <p className="mt-3 text-brand-slate">{pkg.description}</p>
+                      <p className="mt-4 text-sm font-medium text-brand-slate">{pkg.support}</p>
+                      <div className="mt-6 inline-flex w-full items-center justify-between rounded-2xl bg-white/90 px-4 py-3 shadow-sm transition duration-300 group-hover:bg-brand-sand">
+                        <span className="font-medium text-brand-ink">Choose Package</span>
+                        <span className="text-brand-ember">→</span>
                       </div>
                     </SurfaceCard>
-                  </button>
+                  </Link>
                 </Reveal>
               ))}
             </div>

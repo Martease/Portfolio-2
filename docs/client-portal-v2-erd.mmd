@@ -1,0 +1,30 @@
+erDiagram
+  Organization ||--o{ UserMembership : has
+  User ||--o{ UserMembership : belongs_to
+  Organization ||--o{ Project : owns
+
+  User ||--o{ Session : has
+  User ||--o{ PasswordResetToken : gets
+  Organization ||--o{ Invitation : issues
+  User ||--o{ Invitation : sends
+
+  Project ||--o{ ProjectStage : has
+  Project ||--o{ Task : has
+  User ||--o{ Task : assigned
+
+  Project ||--o{ MessageThread : has
+  MessageThread ||--o{ Message : contains
+  Message ||--o{ MessageAttachment : has
+
+  Project ||--o{ Document : has
+  Project ||--o{ UploadFile : has
+  UploadFile ||--o{ UploadFileVersion : versions
+
+  Project ||--o{ Invoice : bills
+  Invoice ||--o{ Payment : paid_by
+
+  Project ||--o{ Meeting : schedules
+  Project ||--o{ Notification : notifies
+  Project ||--o{ SupportTicket : tracks
+  Project ||--o{ WebsiteCareLog : logs
+  Project ||--o{ ActivityLog : audits

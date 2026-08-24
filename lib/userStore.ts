@@ -1,4 +1,10 @@
-import { hashPassword, hashToken, normalizeEmail, verifyPassword } from './auth'
+import {
+  hashPassword,
+  hashToken,
+  isLegacyPasswordHash,
+  normalizeEmail,
+  verifyPassword,
+} from './auth'
 import {
   query,
   type DbEmailVerificationTokenRow,
@@ -102,6 +108,10 @@ export async function authenticateUser(email: string, password: string) {
     return { ok: false, reason: 'invalid_credentials' } as const
   }
 
+  if (isLegacyPasswordHash(user.password_hash)) {
+    await updateUserPasswordHash(String(user.id), password)
+  }
+
   if (!user.email_verified_at) {
     return { ok: false, reason: 'email_unverified' } as const
   }
@@ -179,6 +189,17 @@ export async function consumePasswordResetToken(token: string) {
 export async function updateUserPassword(userId: string, newPassword: string) {
   const passwordHash = hashPassword(newPassword)
   await query('UPDATE app_user SET password_hash = $1, updated_at = NOW() WHERE id = $2', [passwordHash, userId])
+}
+
+async function updateUserPasswordHash(userId: string, plaintextPassword: string) {
+  const passwordHash = hashPassword(plaintextPassword)
+  await query(
+    `UPDATE app_user
+       SET password_hash = $1,
+           updated_at = NOW()
+       WHERE id = $2`,
+    [passwordHash, userId]
+  )
 }
 
 export async function createEmailVerification(params: {
