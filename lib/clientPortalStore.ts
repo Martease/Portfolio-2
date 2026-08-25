@@ -326,6 +326,19 @@ export async function uploadSignedContractCopy(documentId: number, signedCopyUrl
   return result.rows[0] || null
 }
 
+export async function uploadSignedContractCopyObjectKey(documentId: number, signedCopyObjectKey: string) {
+  const result = await query<DbContractDocumentRow>(
+    `UPDATE contract_document
+       SET signed_copy_object_key = $1,
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+    [signedCopyObjectKey, documentId]
+  )
+
+  return result.rows[0] || null
+}
+
 export async function getContractDocumentById(documentId: number) {
   const result = await query<DbContractDocumentRow>('SELECT * FROM contract_document WHERE id = $1 LIMIT 1', [documentId])
   return result.rows[0] || null

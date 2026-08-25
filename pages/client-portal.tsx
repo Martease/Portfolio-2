@@ -150,8 +150,8 @@ export default function ClientPortal({ contractId }: InferGetServerSidePropsType
                           Client download (PDF)
                         </a>
                       ) : null}
-                      {item.signed_copy_url ? (
-                        <a href={item.signed_copy_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                      {item.signed_copy_available ? (
+                        <a href={`/api/client/contracts/${item.id}/download-signed-copy`} target="_blank" rel="noreferrer" className="text-blue-700 underline">
                           Signed copy
                         </a>
                       ) : (

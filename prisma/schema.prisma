@@ -7,6 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CapabilityScope {
+  CONTRACT_READ
+  DASHBOARD_READ
+  DOCUMENTS_READ
+  DOWNLOADS_READ
+  WORKSPACE_READ
+  FEEDBACK_CREATE
+  FILE_SUBMIT
+  SIGNED_COPY_SUBMIT
+  PAYMENT_CREATE
+
+  @@map("capability_scope")
+}
+
 model Contract {
   id              Int      @id @default(autoincrement())
   contract_id     String   @unique
@@ -20,6 +34,9 @@ model Contract {
   invoices        Invoice[]
   documents       ContractDocument[]
   crmClient       CrmClient?
+  capabilities    ClientCapability[]
+
+  @@map("contract")
 }
 
 model AppUser {
@@ -78,6 +95,39 @@ model ClientProject {
   credentials      ProjectCredential[]
   integration      ProjectIntegration?
   worklogs         WorklogEntry[]
+  capabilities     ClientCapability[]
+
+  @@unique([id, contract_id])
+  @@map("client_project")
+}
+
+model ClientCapability {
+  id              String            @id @default(cuid())
+  token_hash      String            @unique
+  contract_id     String
+  project_id      Int?
+  scopes          CapabilityScope[]
+  recipient_email String?
+  created_by      String
+  created_at      DateTime          @default(now())
+  expires_at      DateTime
+  revoked_at      DateTime?
+  revoked_by      String?
+  revoke_reason   String?
+  last_used_at    DateTime?
+  use_count       Int               @default(0)
+  max_uses        Int?
+  replaced_by_id  String?
+
+  contract        Contract          @relation(fields: [contract_id], references: [contract_id], onDelete: Cascade)
+  project         ClientProject?    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  replacedBy      ClientCapability? @relation("CapabilityReplacement", fields: [replaced_by_id], references: [id], onDelete: SetNull)
+  replacements    ClientCapability[] @relation("CapabilityReplacement")
+
+  @@index([contract_id, expires_at])
+  @@index([project_id, expires_at])
+  @@index([expires_at])
+  @@map("client_capability")
 }
 
 model ProjectMilestone {
@@ -205,6 +255,7 @@ model ContractDocument {
   version_number  Int      @default(1)
   pdf_url         String?
   signed_copy_url String?
+  signed_copy_object_key String?
   created_by      String
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt

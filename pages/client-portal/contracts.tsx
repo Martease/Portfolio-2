@@ -4,6 +4,17 @@ import { useSession } from 'next-auth/react'
 import { FormEvent, useEffect, useState } from 'react'
 import { authOptions } from '../api/auth/[...nextauth]'
 
+type UploadInitResponse = {
+  upload: {
+    url: string
+    method: 'PUT'
+    headers: Record<string, string>
+    maxBytes: number
+    expiresIn: number
+  }
+  uploadToken: string
+}
+
 export default function ClientContractsPage() {
   const { data: session, status } = useSession()
   const [payload, setPayload] = useState<any>(null)
@@ -15,7 +26,7 @@ export default function ClientContractsPage() {
   const [contractTitle, setContractTitle] = useState('')
   const [contractSnapshot, setContractSnapshot] = useState('')
   const [signedDocId, setSignedDocId] = useState('')
-  const [signedUrl, setSignedUrl] = useState('')
+  const [signedFile, setSignedFile] = useState<File | null>(null)
 
   async function loadContracts() {
     const res = await fetch('/api/client/contracts')
@@ -66,9 +77,71 @@ export default function ClientContractsPage() {
 
   async function uploadSignedCopy(event: FormEvent) {
     event.preventDefault()
-    await postAction({ action: 'uploadSignedCopy', documentId: Number(signedDocId), signedCopyUrl: signedUrl })
+
+    const documentId = Number(signedDocId)
+    if (!Number.isInteger(documentId) || documentId <= 0) {
+      setError('Document ID is required.')
+      return
+    }
+
+    if (!signedFile) {
+      setError('A PDF file is required.')
+      return
+    }
+
+    if (signedFile.type !== 'application/pdf') {
+      setError('Signed copy must be a PDF file.')
+      return
+    }
+
+    const initRes = await fetch('/api/client/contracts/signed-copy/upload-init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId }),
+    })
+    const initData = await initRes.json().catch(() => ({})) as Partial<UploadInitResponse> & { message?: string }
+
+    if (!initRes.ok || !initData.upload || !initData.uploadToken) {
+      setError(initData.message || 'Failed to initialize signed-copy upload.')
+      return
+    }
+
+    if (signedFile.size > initData.upload.maxBytes) {
+      setError('Signed copy exceeds the maximum allowed file size.')
+      return
+    }
+
+    const putRes = await fetch(initData.upload.url, {
+      method: initData.upload.method,
+      headers: initData.upload.headers,
+      body: signedFile,
+    })
+
+    if (!putRes.ok) {
+      setError('Failed to upload signed copy to secure storage.')
+      return
+    }
+
+    const completeRes = await fetch('/api/client/contracts/signed-copy/upload-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        documentId,
+        uploadToken: initData.uploadToken,
+      }),
+    })
+
+    const completeData = await completeRes.json().catch(() => ({} as { message?: string }))
+    if (!completeRes.ok) {
+      setError(completeData.message || 'Signed-copy upload could not be completed.')
+      return
+    }
+
+    setMessage(completeData.message || 'Signed copy uploaded.')
+    setError('')
+    await loadContracts()
     setSignedDocId('')
-    setSignedUrl('')
+    setSignedFile(null)
   }
 
   if (status === 'loading') return <p className="p-8">Loading...</p>
@@ -110,7 +183,12 @@ export default function ClientContractsPage() {
           <h2 className="font-semibold text-slate-900">Upload Signed Copy</h2>
           <form className="mt-2 grid gap-2 sm:grid-cols-[220px_1fr_auto]" onSubmit={uploadSignedCopy}>
             <input value={signedDocId} onChange={(event) => setSignedDocId(event.target.value)} placeholder="Document ID" className="rounded border px-3 py-2" />
-            <input value={signedUrl} onChange={(event) => setSignedUrl(event.target.value)} placeholder="Signed copy URL" className="rounded border px-3 py-2" />
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(event) => setSignedFile(event.target.files?.[0] || null)}
+              className="rounded border px-3 py-2"
+            />
             <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Upload</button>
           </form>
         </section>
@@ -145,7 +223,11 @@ export default function ClientContractsPage() {
                 <p className="font-medium">#{item.id} {item.title}</p>
                 <div className="mt-1 flex flex-wrap gap-3">
                   {item.pdf_url ? <a href={item.pdf_url} className="text-blue-700 underline">Client download (PDF)</a> : null}
-                  {item.signed_copy_url ? <a href={item.signed_copy_url} className="text-blue-700 underline">Signed copy</a> : <span>No signed copy uploaded</span>}
+                  {item.signed_copy_available ? (
+                    <a href={`/api/client/contracts/${item.id}/download-signed-copy`} className="text-blue-700 underline">Signed copy</a>
+                  ) : (
+                    <span>No signed copy uploaded</span>
+                  )}
                 </div>
               </li>
             ))}

@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { validateString } from '../../../../lib/adminSecurity'
-import { deny, getApiSession, hasRole } from '../../../../lib/authz'
+import { ensureProjectByContract } from '../../../../lib/clientPortalStore'
+import { getContract } from '../../../../lib/contractStore'
+import { authorizeCapabilityAccess, authorizePortalSession } from '../../../../lib/portalAccess'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -8,19 +10,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
   }
 
-  const session = await getApiSession(req, res)
-  if (!session?.user) {
-    return deny(res, 401, 'Authentication required')
-  }
-
-  if (!hasRole(session.user.role, ['client', 'admin'])) {
-    return deny(res, 403, 'Client or admin role required')
+  const access = await authorizePortalSession(req, res)
+  if (!access) {
+    return
   }
 
   const rawContractId = Array.isArray(req.query.contractId) ? req.query.contractId[0] : req.query.contractId
   const rawTitle = Array.isArray(req.query.title) ? req.query.title[0] : req.query.title
 
-  let contractId = 'unknown'
+  let contractId = access.contractId
   let title = 'Contract'
 
   if (typeof rawContractId === 'string' && rawContractId.trim()) {
@@ -31,10 +29,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   }
 
-  const isAdmin = hasRole(session.user.role, ['admin'])
-  const isOwnerClient = hasRole(session.user.role, ['client']) && session.user.contractId === contractId
-  if (!isAdmin && !isOwnerClient) {
-    return deny(res, 403, 'You do not have access to this contract download')
+  const contract = await getContract(contractId)
+  if (!contract) {
+    return res.status(404).json({ message: 'Contract not found.' })
+  }
+
+  const project = await ensureProjectByContract(contract.contract_id, contract.client_name)
+  const capability = await authorizeCapabilityAccess(req, res, {
+    contractId: contract.contract_id,
+    projectId: project.id,
+    requiredScopes: 'DOWNLOADS_READ',
+    required: !access.isAdmin,
+  })
+  if (!capability && !access.isAdmin) {
+    return
   }
 
   if (typeof rawTitle === 'string' && rawTitle.trim()) {

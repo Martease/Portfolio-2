@@ -34,6 +34,24 @@ async function main() {
   `)
 
   await client.query(`
+    DO $$ BEGIN
+      CREATE TYPE capability_scope AS ENUM (
+        'CONTRACT_READ',
+        'DASHBOARD_READ',
+        'DOCUMENTS_READ',
+        'DOWNLOADS_READ',
+        'WORKSPACE_READ',
+        'FEEDBACK_CREATE',
+        'FILE_SUBMIT',
+        'SIGNED_COPY_SUBMIT',
+        'PAYMENT_CREATE'
+      );
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+    END $$
+  `)
+
+  await client.query(`
     CREATE TABLE IF NOT EXISTS app_user (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -98,9 +116,48 @@ async function main() {
       start_date TIMESTAMPTZ,
       due_date TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (id, contract_id)
     )
   `)
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS client_capability (
+      id TEXT PRIMARY KEY,
+      token_hash TEXT UNIQUE NOT NULL,
+      contract_id TEXT NOT NULL REFERENCES contract(contract_id) ON DELETE CASCADE,
+      project_id INTEGER,
+      scopes capability_scope[] NOT NULL,
+      recipient_email TEXT,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      revoked_at TIMESTAMPTZ,
+      revoked_by TEXT,
+      revoke_reason TEXT,
+      last_used_at TIMESTAMPTZ,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      max_uses INTEGER,
+      replaced_by_id TEXT REFERENCES client_capability(id) ON DELETE SET NULL,
+      FOREIGN KEY (project_id, contract_id)
+        REFERENCES client_project(id, contract_id) ON DELETE CASCADE
+    )
+  `)
+
+  await client.query(
+    `CREATE INDEX IF NOT EXISTS idx_client_capability_contract_expiry
+     ON client_capability (contract_id, expires_at)`
+  )
+
+  await client.query(
+    `CREATE INDEX IF NOT EXISTS idx_client_capability_project_expiry
+     ON client_capability (project_id, expires_at)`
+  )
+
+  await client.query(
+    `CREATE INDEX IF NOT EXISTS idx_client_capability_expiry
+     ON client_capability (expires_at)`
+  )
 
   await client.query(`
     CREATE TABLE IF NOT EXISTS project_milestone (

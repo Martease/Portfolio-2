@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { deny, getApiSession, hasRole } from '../../../lib/authz'
 import { getContract } from '../../../lib/contractStore'
 import { ensureProjectByContract, getDashboardByContract } from '../../../lib/clientPortalStore'
+import { authorizeCapabilityAccess, authorizePortalSession } from '../../../lib/portalAccess'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -9,34 +9,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
   }
 
-  const session = await getApiSession(req, res)
-  if (!session?.user) {
-    return deny(res, 401, 'Authentication required')
+  const access = await authorizePortalSession(req, res)
+  if (!access) {
+    return
   }
 
-  if (!hasRole(session.user.role, ['client', 'admin'])) {
-    return deny(res, 403, 'Client or admin role required')
-  }
-
-  const contractId = hasRole(session.user.role, ['admin'])
-    ? String(req.query.contractId || session.user.contractId || '')
-    : session.user.contractId || ''
-
-  if (!contractId) {
-    return res.status(400).json({ message: 'No contract is linked to this account.' })
-  }
-
-  const contract = await getContract(contractId)
+  const contract = await getContract(access.contractId)
   if (!contract) {
     return res.status(404).json({ message: 'Contract not found.' })
   }
 
-  await ensureProjectByContract(contract.contract_id, contract.client_name)
+  const project = await ensureProjectByContract(contract.contract_id, contract.client_name)
+  const capability = await authorizeCapabilityAccess(req, res, {
+    contractId: contract.contract_id,
+    projectId: project.id,
+    requiredScopes: 'DASHBOARD_READ',
+    required: !access.isAdmin,
+  })
+  if (!capability && !access.isAdmin) {
+    return
+  }
+
   const dashboard = await getDashboardByContract(contract.contract_id)
 
   if (!dashboard) {
     return res.status(404).json({ message: 'Dashboard not available.' })
   }
 
-  return res.status(200).json(dashboard)
+  const contracts = dashboard.contracts.map((item) => {
+    const { signed_copy_object_key: _signedCopyObjectKey, ...publicDoc } = item
+    return {
+      ...publicDoc,
+      signed_copy_url: null,
+      signed_copy_available: Boolean(item.signed_copy_object_key || item.signed_copy_url),
+    }
+  })
+
+  return res.status(200).json({
+    ...dashboard,
+    contracts,
+  })
 }

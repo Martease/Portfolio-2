@@ -1,42 +1,61 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { deny, getApiSession, hasRole } from '../../../lib/authz'
 import {
   ensureGoogleWorkspaceResources,
   ensureProjectByContract,
+  getProjectByContract,
   listGoogleWorkspaceResources,
   syncGoogleWorkspaceResources,
 } from '../../../lib/clientPortalStore'
 import { getContract } from '../../../lib/contractStore'
 import { canUseGoogleWorkspace, provisionGoogleWorkspace } from '../../../lib/googleWorkspace'
+import { authorizeCapabilityAccess, authorizePortalSession } from '../../../lib/portalAccess'
 import { findClientEmailByContractId } from '../../../lib/userStore'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getApiSession(req, res)
-  if (!session?.user) {
-    return deny(res, 401, 'Authentication required')
+  const access = await authorizePortalSession(req, res)
+  if (!access) {
+    return
   }
 
-  if (!hasRole(session.user.role, ['client', 'admin'])) {
-    return deny(res, 403, 'Client or admin role required')
-  }
-
-  const contractId = hasRole(session.user.role, ['admin'])
-    ? String(req.query.contractId || session.user.contractId || '')
-    : session.user.contractId || ''
-
-  if (!contractId) {
-    return res.status(400).json({ message: 'No contract is linked to this account.' })
-  }
-
-  const contract = await getContract(contractId)
+  const contract = await getContract(access.contractId)
   if (!contract) {
     return res.status(404).json({ message: 'Contract not found.' })
   }
 
-  const project = await ensureProjectByContract(contract.contract_id, contract.client_name)
-  const clientEmail = await findClientEmailByContractId(contract.contract_id)
+  if (req.method === 'GET') {
+    const project = await getProjectByContract(contract.contract_id)
+    const capability = await authorizeCapabilityAccess(req, res, {
+      contractId: contract.contract_id,
+      projectId: project?.id,
+      requiredScopes: 'WORKSPACE_READ',
+      required: !access.isAdmin,
+    })
+    if (!capability && !access.isAdmin) {
+      return
+    }
+
+    if (!project) {
+      return res.status(200).json({ resources: [] })
+    }
+
+    const resources = await listGoogleWorkspaceResources(project.id)
+    return res.status(200).json({ resources })
+  }
 
   if (req.method === 'POST') {
+    const project = await ensureProjectByContract(contract.contract_id, contract.client_name)
+    const capability = await authorizeCapabilityAccess(req, res, {
+      contractId: contract.contract_id,
+      projectId: project.id,
+      requiredScopes: 'WORKSPACE_READ',
+      required: !access.isAdmin,
+    })
+    if (!capability && !access.isAdmin) {
+      return
+    }
+
+    const clientEmail = await findClientEmailByContractId(contract.contract_id)
+
     if (canUseGoogleWorkspace()) {
       try {
         const resources = await provisionGoogleWorkspace({
@@ -61,11 +80,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Google Workspace resources provisioned successfully.',
       resources,
     })
-  }
-
-  if (req.method === 'GET') {
-    const resources = await listGoogleWorkspaceResources(project.id)
-    return res.status(200).json({ resources })
   }
 
   res.setHeader('Allow', ['GET', 'POST'])

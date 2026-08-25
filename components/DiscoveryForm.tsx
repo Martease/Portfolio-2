@@ -58,6 +58,8 @@ export default function DiscoveryForm() {
   const selectedService = watch('serviceType')
 
   useEffect(() => {
+    if (!searchParams) return
+
     const packageParam = searchParams.get('package')
     const serviceParam = searchParams.get('service')
     const selectedParam = packageParam || serviceParam

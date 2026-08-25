@@ -55,6 +55,25 @@ export type DbEmailVerificationTokenRow = {
   created_at: Date
 }
 
+export type DbClientCapabilityRow = {
+  id: string
+  token_hash: string
+  contract_id: string
+  project_id: number | null
+  scopes: string[]
+  recipient_email: string | null
+  created_by: string
+  created_at: Date
+  expires_at: Date
+  revoked_at: Date | null
+  revoked_by: string | null
+  revoke_reason: string | null
+  last_used_at: Date | null
+  use_count: number
+  max_uses: number | null
+  replaced_by_id: string | null
+}
+
 export type DbClientProjectRow = {
   id: number
   contract_id: string
@@ -170,6 +189,7 @@ export type DbContractDocumentRow = {
   version_number: number
   pdf_url: string | null
   signed_copy_url: string | null
+  signed_copy_object_key: string | null
   created_by: string
   created_at: Date
   updated_at: Date
@@ -508,6 +528,23 @@ async function initDb() {
     )
   `)
   await pool.query(`
+    DO $$ BEGIN
+      CREATE TYPE capability_scope AS ENUM (
+        'CONTRACT_READ',
+        'DASHBOARD_READ',
+        'DOCUMENTS_READ',
+        'DOWNLOADS_READ',
+        'WORKSPACE_READ',
+        'FEEDBACK_CREATE',
+        'FILE_SUBMIT',
+        'SIGNED_COPY_SUBMIT',
+        'PAYMENT_CREATE'
+      );
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+    END $$
+  `)
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS app_user (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -566,9 +603,44 @@ async function initDb() {
       start_date TIMESTAMPTZ,
       due_date TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (id, contract_id)
     )
   `)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS client_capability (
+      id TEXT PRIMARY KEY,
+      token_hash TEXT UNIQUE NOT NULL,
+      contract_id TEXT NOT NULL REFERENCES contract(contract_id) ON DELETE CASCADE,
+      project_id INTEGER,
+      scopes capability_scope[] NOT NULL,
+      recipient_email TEXT,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      revoked_at TIMESTAMPTZ,
+      revoked_by TEXT,
+      revoke_reason TEXT,
+      last_used_at TIMESTAMPTZ,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      max_uses INTEGER,
+      replaced_by_id TEXT REFERENCES client_capability(id) ON DELETE SET NULL,
+      FOREIGN KEY (project_id, contract_id)
+        REFERENCES client_project(id, contract_id) ON DELETE CASCADE
+    )
+  `)
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_client_capability_contract_expiry
+       ON client_capability (contract_id, expires_at)`
+  )
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_client_capability_project_expiry
+       ON client_capability (project_id, expires_at)`
+  )
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_client_capability_expiry
+       ON client_capability (expires_at)`
+  )
   await pool.query(`
     CREATE TABLE IF NOT EXISTS project_milestone (
       id SERIAL PRIMARY KEY,
@@ -684,6 +756,7 @@ async function initDb() {
       version_number INTEGER NOT NULL DEFAULT 1,
       pdf_url TEXT,
       signed_copy_url TEXT,
+      signed_copy_object_key TEXT,
       created_by TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

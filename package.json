@@ -6,6 +6,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
+    "test": "vitest run",
     "db:init": "node scripts/init-db.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
@@ -13,6 +14,8 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1118.0",
+    "@aws-sdk/s3-request-presigner": "^3.1118.0",
     "@hookform/resolvers": "^5.4.0",
     "@prisma/client": "^6.17.1",
     "bcryptjs": "^3.0.3",
@@ -36,6 +39,7 @@
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
   }
 }

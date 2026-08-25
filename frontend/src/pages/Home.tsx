@@ -1,4 +1,6 @@
 import Hero from '../components/Hero';
+
+
 // import About from '../components/About'; // Coming soon
 // import Services from '../components/Services'; // Coming soon
 

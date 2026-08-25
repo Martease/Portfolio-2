@@ -36,6 +36,38 @@ export async function enforceAdminMutationRateLimit(req: NextApiRequest, res: Ne
   return true
 }
 
+export async function enforceFileSubmitRateLimit(req: NextApiRequest, res: NextApiResponse, actorKey: string) {
+  const windowMs = parsePositiveInt(process.env.FILE_SUBMIT_RATE_LIMIT_WINDOW_MS, 60_000)
+  const max = parsePositiveInt(process.env.FILE_SUBMIT_RATE_LIMIT_MAX, 20)
+  const scope = `file-submit:${actorKey}:${getClientIp(req)}`
+
+  const result = await checkRateLimit({ scope, windowMs, max })
+  if (!result.allowed) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000))
+    res.setHeader('Retry-After', String(retryAfterSeconds))
+    res.status(429).json({ message: 'Too many file submissions. Please try again shortly.' })
+    return false
+  }
+
+  return true
+}
+
+export async function enforceSignedCopySubmitRateLimit(req: NextApiRequest, res: NextApiResponse, actorKey: string) {
+  const windowMs = parsePositiveInt(process.env.SIGNED_COPY_SUBMIT_RATE_LIMIT_WINDOW_MS, 60_000)
+  const max = parsePositiveInt(process.env.SIGNED_COPY_SUBMIT_RATE_LIMIT_MAX, 20)
+  const scope = `signed-copy-submit:${actorKey}:${getClientIp(req)}`
+
+  const result = await checkRateLimit({ scope, windowMs, max })
+  if (!result.allowed) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000))
+    res.setHeader('Retry-After', String(retryAfterSeconds))
+    res.status(429).json({ message: 'Too many signed copy submissions. Please try again shortly.' })
+    return false
+  }
+
+  return true
+}
+
 export function validateString(
   value: unknown,
   field: string,
@@ -108,6 +140,39 @@ export function validateUrl(value: unknown, field: string) {
 
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     throw new Error(`${field} must use http or https`)
+  }
+
+  return normalized
+}
+
+export function validateFileSubmissionUrl(value: unknown, field: string) {
+  const normalized = validateUrl(value, field)
+  const parsed = new URL(normalized)
+
+  if (!parsed.hostname || parsed.hostname.length < 3) {
+    throw new Error(`${field} must include a valid hostname`)
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error(`${field} must not include embedded credentials`)
+  }
+
+  if (parsed.hostname.toLowerCase() === 'localhost') {
+    throw new Error(`${field} cannot target localhost`)
+  }
+
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(parsed.hostname)) {
+    const octets = parsed.hostname.split('.').map((part) => Number(part))
+    const [a, b] = octets
+    const isPrivateRange =
+      a === 10 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      a === 127
+
+    if (isPrivateRange) {
+      throw new Error(`${field} must not use local or private IP addresses`)
+    }
   }
 
   return normalized
