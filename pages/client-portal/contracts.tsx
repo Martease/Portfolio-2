@@ -224,7 +224,7 @@ export default function ClientContractsPage() {
                 <div className="mt-1 flex flex-wrap gap-3">
                   {item.pdf_url ? <a href={item.pdf_url} className="text-blue-700 underline">Client download (PDF)</a> : null}
                   {item.signed_copy_available ? (
-                    <a href={`/api/client/contracts/${item.id}/download-signed-copy`} className="text-blue-700 underline">Signed copy</a>
+                    <a href={`/api/client/contracts/${item.id}/download-signed-copy`} target="_blank" rel="noreferrer" className="text-blue-700 underline">Signed copy</a>
                   ) : (
                     <span>No signed copy uploaded</span>
                   )}

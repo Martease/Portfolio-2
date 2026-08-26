@@ -54,9 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (target.signed_copy_object_key) {
+    const safeFileName = `${sanitizeFileName(target.title)}.pdf`
     const download = await createSignedCopyDownloadUrl({
       objectKey: target.signed_copy_object_key,
-      fileName: `${sanitizeFileName(target.title)}.pdf`,
+      fileName: safeFileName,
     })
 
     const upstream = await fetch(download.url)
@@ -65,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const contentType = upstream.headers.get('content-type') || 'application/pdf'
-    const contentDisposition = upstream.headers.get('content-disposition') || `inline; filename="${sanitizeFileName(target.title)}.pdf"`
+    const contentDisposition = `inline; filename="${safeFileName}"`
     const contentLength = upstream.headers.get('content-length')
 
     res.setHeader('Content-Type', contentType)
