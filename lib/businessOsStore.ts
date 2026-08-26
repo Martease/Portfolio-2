@@ -89,9 +89,18 @@ export async function getExecutiveDashboard() {
   }
 }
 
-export async function listCrmClients() {
+export type CrmClientBundle = {
+  client: DbCrmClientRow
+  projects: Array<{ id: number; title: string; status: string; contract_id: string }>
+  notes: DbCrmNoteRow[]
+  files: DbCrmFileRow[]
+  emails: DbCrmEmailRow[]
+  contracts: Array<{ contract_id: string; payment_status: string; amount_due_cents: number; currency: string }>
+}
+
+export async function listCrmClients(): Promise<CrmClientBundle[]> {
   const clients = await query<DbCrmClientRow>('SELECT * FROM crm_client ORDER BY updated_at DESC, id DESC')
-  const result = []
+  const result: CrmClientBundle[] = []
 
   for (const client of clients.rows) {
     const [projects, notes, files, emails, contracts] = await Promise.all([
@@ -230,12 +239,23 @@ export async function deleteCrmEmail(crmClientId: number, emailId: number) {
   await query('DELETE FROM crm_email WHERE crm_client_id = $1 AND id = $2', [crmClientId, emailId])
 }
 
-export async function listAdminProjects() {
+export type AdminProjectBundle = {
+  project: { id: number; title: string; status: string; contract_id: string; progress_percent: number }
+  tasks: DbProjectTaskRow[]
+  timeline: DbProjectTimelineEventRow[]
+  files: DbProjectFileRow[]
+  assets: DbProjectAssetRow[]
+  notes: DbProjectNoteRow[]
+  credentials: DbProjectCredentialRow[]
+  integrations: DbProjectIntegrationRow | null
+}
+
+export async function listAdminProjects(): Promise<AdminProjectBundle[]> {
   const projects = await query<{ id: number; title: string; status: string; contract_id: string; progress_percent: number }>(
     'SELECT id, title, status, contract_id, progress_percent FROM client_project ORDER BY updated_at DESC'
   )
 
-  const result = []
+  const result: AdminProjectBundle[] = []
 
   for (const project of projects.rows) {
     const [tasks, timeline, files, assets, notes, credentials, integrations] = await Promise.all([

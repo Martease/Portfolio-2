@@ -406,5 +406,6 @@ model DiscoveryFormSubmission {
   description        String
   preferred_platform String?
   budget_range       String
+  status             String   @default("PENDING_REVIEW")
   created_at         DateTime @default(now())
 }
