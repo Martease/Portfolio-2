@@ -31,9 +31,6 @@ export default function CrmPage() {
   const [newClientContactPhone, setNewClientContactPhone] = useState('')
   const [newClientStatus, setNewClientStatus] = useState('Active')
   const [newClientTags, setNewClientTags] = useState('')
-  const [inviteClientId, setInviteClientId] = useState<number | ''>('')
-  const [inviteName, setInviteName] = useState('')
-  const [inviteEmail, setInviteEmail] = useState('')
 
   async function loadClients() {
     const res = await fetch('/api/back-office/crm')
@@ -138,49 +135,6 @@ export default function CrmPage() {
     })
   }
 
-  async function sendPortalInvite(event: FormEvent) {
-    event.preventDefault()
-
-    if (!inviteClientId || !inviteEmail || !inviteName) {
-      setError('Client, invite name, and invite email are required.')
-      return
-    }
-
-    const selected = clients.find((bundle) => bundle.client.id === Number(inviteClientId))
-    if (!selected) {
-      setError('Selected client not found.')
-      return
-    }
-
-    const contractId = selected.client.contract_id || selected.contracts[0]?.contract_id
-    if (!contractId) {
-      setError('Selected client has no linked contract. Create/link a contract first.')
-      return
-    }
-
-    const response = await fetch('/api/portal/invitations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: inviteName,
-        email: inviteEmail,
-        contractId,
-      }),
-    })
-
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      setError(data.message || 'Failed to send portal invitation.')
-      return
-    }
-
-    setMessage(`Portal invitation created for ${inviteEmail}.`)
-    setError('')
-    setInviteEmail('')
-    setInviteName('')
-    setInviteClientId('')
-  }
-
   return (
     <main className="min-h-screen bg-slate-100 p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -235,56 +189,6 @@ export default function CrmPage() {
               className="rounded border px-3 py-2"
             />
             <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Create</button>
-          </form>
-        </section>
-
-        <section className="rounded-xl border bg-white p-4">
-          <h2 className="text-lg font-semibold text-slate-900">Invite Client To Portal</h2>
-          <p className="mt-1 text-sm text-slate-600">Sends an activation link and password setup flow for the selected client contact.</p>
-          <form className="mt-3 flex flex-wrap gap-2" onSubmit={sendPortalInvite}>
-            <select
-              value={inviteClientId}
-              onChange={(event) => {
-                const value = event.target.value
-                if (!value) {
-                  setInviteClientId('')
-                  return
-                }
-
-                const clientId = Number(value)
-                setInviteClientId(clientId)
-
-                const selected = clients.find((bundle) => bundle.client.id === clientId)
-                if (selected?.client.contact_name) {
-                  setInviteName(selected.client.contact_name)
-                }
-                if (selected?.client.contact_email) {
-                  setInviteEmail(selected.client.contact_email)
-                }
-              }}
-              className="rounded border px-3 py-2"
-            >
-              <option value="">Select client</option>
-              {clients.map((bundle) => (
-                <option key={bundle.client.id} value={bundle.client.id}>
-                  {bundle.client.name}
-                </option>
-              ))}
-            </select>
-            <input
-              value={inviteName}
-              onChange={(event) => setInviteName(event.target.value)}
-              placeholder="Invitee name"
-              className="rounded border px-3 py-2"
-            />
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.target.value)}
-              placeholder="Invitee email"
-              className="rounded border px-3 py-2"
-            />
-            <button className="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Send Invite</button>
           </form>
         </section>
 

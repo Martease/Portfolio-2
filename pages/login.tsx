@@ -18,11 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
-      if (session.user.role === 'admin') {
-        router.replace('/back-office')
-      } else {
-        router.replace('/client-portal')
-      }
+      router.replace('/back-office')
     }
   }, [router, session, status])
 
@@ -31,7 +27,7 @@ export default function LoginPage() {
     setSubmitting(true)
     setError('')
 
-    const callbackUrl = typeof router.query.callbackUrl === 'string' ? router.query.callbackUrl : '/client-portal'
+    const callbackUrl = typeof router.query.callbackUrl === 'string' ? router.query.callbackUrl : '/back-office'
 
     const result = await signIn('credentials', {
       redirect: false,
@@ -57,7 +53,7 @@ export default function LoginPage() {
     <div className="min-h-screen text-brand-ink">
       <Header />
       <main className="mx-auto max-w-4xl px-6 pb-24 pt-16">
-        <SectionHeading eyebrow="Authentication" title="Login" description="Sign in to access your portal." align="left" />
+        <SectionHeading eyebrow="Authentication" title="Admin Login" description="Sign in to access the Back Office." align="left" />
         <SurfaceCard className="mt-8 max-w-xl">
           <form className="grid gap-4" onSubmit={onSubmit}>
             <input
@@ -87,7 +83,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-5 flex flex-wrap gap-3 text-sm text-brand-slate">
-            <a href="/register" className="text-brand-ember">Create account</a>
+            <a href="/forgot-password" className="text-brand-ember">Forgot password?</a>
             <a href="/forgot-password" className="text-brand-ember">Forgot password?</a>
           </div>
         </SurfaceCard>

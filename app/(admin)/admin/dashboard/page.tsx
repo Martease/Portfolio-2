@@ -6,11 +6,11 @@ export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions)
 
   if (!session?.user) {
-    redirect('/portal/login?callbackUrl=%2Fadmin%2Fdashboard')
+    redirect('/login?callbackUrl=%2Fadmin%2Fdashboard')
   }
 
   if (session.user.role !== 'admin') {
-    redirect('/portal/dashboard')
+    redirect('/login')
   }
 
   return (

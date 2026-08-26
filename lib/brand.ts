@@ -36,5 +36,4 @@ export const publicNavItems: NavItem[] = [
   { label: 'Services', href: '/services' },
   { label: 'Portfolio', href: '/portfolio' },
   { label: 'Contact', href: '/contact' },
-  { label: 'Client Login', href: '/login' },
 ]

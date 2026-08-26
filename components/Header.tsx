@@ -60,18 +60,7 @@ export default function Header() {
   }, [router.pathname])
 
   const navItems = useMemo(() => {
-    return publicNavItems.map((item) => {
-      if (item.label === 'Client Login' && status === 'authenticated') {
-        const dashboardHref = session?.user?.role === 'admin' ? '/back-office' : '/client-portal'
-        const isActive = router.pathname === dashboardHref || router.pathname.startsWith(`${dashboardHref}/`)
-        return {
-          ...item,
-          label: 'Dashboard',
-          href: dashboardHref,
-          isActive,
-        }
-      }
-
+    const items = publicNavItems.map((item) => {
       const isSectionLink = Boolean(item.sectionId)
       const isActive = isSectionLink
         ? router.pathname === '/' && activeSection === item.sectionId
@@ -79,6 +68,17 @@ export default function Header() {
 
       return { ...item, isActive }
     })
+
+    if (status === 'authenticated' && session?.user?.role === 'admin') {
+      const isActive = router.pathname.startsWith('/back-office')
+      items.push({
+        label: 'Back Office',
+        href: '/back-office',
+        isActive,
+      })
+    }
+
+    return items
   }, [activeSection, router.pathname, session?.user?.role, status])
 
   return (

@@ -5,7 +5,6 @@ const navItems = [
   { label: 'Portfolio', href: '#portfolio' },
   { label: 'Accomplishments', href: '#accomplishments' },
   { label: 'Contact', href: '#contact' },
-  { label: 'Client Portal', href: '/client-portal' },
 ];
 
 const Header = () => {
