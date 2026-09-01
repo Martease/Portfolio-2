@@ -40,16 +40,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
-  } catch (error: any) {
-    return res.status(400).json({ message: `Webhook signature verification failed: ${error.message}` })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return res.status(400).json({ message: `Webhook signature verification failed: ${errorMessage}` })
   }
 
   const relevantEvents = ['checkout.session.completed', 'payment_intent.succeeded']
   if (relevantEvents.includes(event.type)) {
-    const data = event.data.object as any
-    const contractId = data?.metadata?.contract_id || data?.client_reference_id
-    if (contractId) {
-      await updateContract(contractId, { payment_status: 'Paid' })
+    const data = event.data.object as unknown
+    if (typeof data === 'object' && data !== null) {
+      const obj = data as Record<string, unknown>
+      const metadata = (typeof obj.metadata === 'object' && obj.metadata !== null) ? obj.metadata as Record<string, unknown> : {}
+      const contractId = (metadata.contract_id || obj.client_reference_id) as string | undefined
+      if (contractId && typeof contractId === 'string') {
+        await updateContract(contractId, { payment_status: 'Paid' })
+      }
     }
   }
 

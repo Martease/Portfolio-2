@@ -66,11 +66,16 @@ export async function updateContract(
   contractId: string,
   updates: Partial<Omit<Contract, 'id' | 'contract_id'>>
 ): Promise<Contract | undefined> {
+  // Only allow updates to specific fields to prevent SQL injection
+  const allowedFields = ['client_name', 'amount_due_cents', 'currency', 'payment_status', 'payment_link'] as const
   const fields: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let index = 1
 
   for (const [key, value] of Object.entries(updates)) {
+    if (!allowedFields.includes(key as typeof allowedFields[number])) {
+      throw new Error(`Invalid field for update: ${key}`)
+    }
     fields.push(`${key} = $${index}`)
     values.push(value)
     index += 1

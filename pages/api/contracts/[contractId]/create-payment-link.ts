@@ -71,7 +71,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json({ payment_link: paymentLink.url })
-  } catch (error: any) {
-    return res.status(500).json({ message: error.message || 'Stripe error' })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Stripe error'
+    return res.status(500).json({ message: errorMessage })
   }
 }

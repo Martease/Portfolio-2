@@ -31,7 +31,7 @@ export default async function handler(
     return res.status(400).json({ message: 'Service name and amount are required' })
   }
 
-  if (typeof service !== 'string' || service.trim().length < 2 || service.trim().length > 120) {
+  if (typeof service !== 'string' || typeof service.trim !== 'function' || service.trim().length === 0 || service.trim().length < 2 || service.trim().length > 120) {
     return res.status(400).json({ message: 'Invalid service name' })
   }
 
@@ -71,7 +71,7 @@ export default async function handler(
     }
 
     return res.status(200).json({ url: session.url })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Stripe checkout error:', error)
     return res.status(500).json({ 
       message: error instanceof Error ? error.message : 'Failed to create checkout session' 

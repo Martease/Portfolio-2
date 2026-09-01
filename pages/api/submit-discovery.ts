@@ -104,8 +104,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         status: 'PENDING_REVIEW',
       },
     })
-  } catch (error) {
-    console.error('Discovery form save failed:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Discovery form save failed:', errorMessage)
     return res.status(500).json({ message: 'Failed to save discovery request.' })
   }
 
@@ -152,8 +153,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         data.description,
       ].join('\n'),
     })
-  } catch (error) {
-    console.error('Discovery email send failed:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Discovery email send failed:', errorMessage)
     return res.status(200).json({ message: 'Discovery request saved, but notification email failed.' })
   }
 

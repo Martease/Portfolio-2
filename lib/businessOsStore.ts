@@ -16,76 +16,81 @@ import {
 } from './db'
 
 export async function getExecutiveDashboard() {
-  const [revenue, projects, clients, tasks, deadlines, unreadMessages, pendingContracts, invoices] = await Promise.all([
-    query<{ total_cents: string }>(
-      `SELECT COALESCE(SUM(amount_cents), 0)::bigint::text AS total_cents
-       FROM invoice
-       WHERE LOWER(status) = 'paid'`
-    ),
-    query<{ count: string }>('SELECT COUNT(*)::text AS count FROM client_project'),
-    query<{ count: string }>('SELECT COUNT(*)::text AS count FROM crm_client'),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count
-       FROM project_task
-       WHERE LOWER(status) <> 'done'`
-    ),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM (
-         SELECT id FROM project_task WHERE due_date BETWEEN NOW() AND NOW() + INTERVAL '14 days' AND LOWER(status) <> 'done'
+  try {
+    const [revenue, projects, clients, tasks, deadlines, unreadMessages, pendingContracts, invoices] = await Promise.all([
+      query<{ total_cents: string }>(
+        `SELECT COALESCE(SUM(amount_cents), 0)::bigint::text AS total_cents
+         FROM invoice
+         WHERE LOWER(status) = 'paid'`
+      ),
+      query<{ count: string }>('SELECT COUNT(*)::text AS count FROM client_project'),
+      query<{ count: string }>('SELECT COUNT(*)::text AS count FROM crm_client'),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count
+         FROM project_task
+         WHERE LOWER(status) <> 'done'`
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM (
+           SELECT id FROM project_task WHERE due_date BETWEEN NOW() AND NOW() + INTERVAL '14 days' AND LOWER(status) <> 'done'
+           UNION ALL
+           SELECT id FROM project_milestone WHERE due_date BETWEEN NOW() AND NOW() + INTERVAL '14 days' AND completed = false
+         ) q`
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count
+         FROM crm_email
+         WHERE direction = 'inbound' AND is_read = false`
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count
+         FROM contract
+         WHERE LOWER(payment_status) <> 'paid'`
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count
+         FROM invoice
+         WHERE LOWER(status) <> 'paid'`
+      ),
+    ])
+
+    const [upcomingDeadlines, latestUnreadMessages] = await Promise.all([
+      query<{ type: string; title: string; due_date: Date }>(
+        `SELECT 'task' AS type, title, due_date
+         FROM project_task
+         WHERE due_date IS NOT NULL AND due_date BETWEEN NOW() AND NOW() + INTERVAL '30 days'
          UNION ALL
-         SELECT id FROM project_milestone WHERE due_date BETWEEN NOW() AND NOW() + INTERVAL '14 days' AND completed = false
-       ) q`
-    ),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count
-       FROM crm_email
-       WHERE direction = 'inbound' AND is_read = false`
-    ),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count
-       FROM contract
-       WHERE LOWER(payment_status) <> 'paid'`
-    ),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count
-       FROM invoice
-       WHERE LOWER(status) <> 'paid'`
-    ),
-  ])
+         SELECT 'milestone' AS type, title, due_date
+         FROM project_milestone
+         WHERE due_date IS NOT NULL AND due_date BETWEEN NOW() AND NOW() + INTERVAL '30 days'
+         ORDER BY due_date ASC
+         LIMIT 8`
+      ),
+      query<{ id: number; subject: string; sent_at: Date; client_name: string }>(
+        `SELECT e.id, e.subject, e.sent_at, c.name AS client_name
+         FROM crm_email e
+         JOIN crm_client c ON c.id = e.crm_client_id
+         WHERE e.direction = 'inbound' AND e.is_read = false
+         ORDER BY e.sent_at DESC
+         LIMIT 8`
+      ),
+    ])
 
-  const [upcomingDeadlines, latestUnreadMessages] = await Promise.all([
-    query<{ type: string; title: string; due_date: Date }>(
-      `SELECT 'task' AS type, title, due_date
-       FROM project_task
-       WHERE due_date IS NOT NULL AND due_date BETWEEN NOW() AND NOW() + INTERVAL '30 days'
-       UNION ALL
-       SELECT 'milestone' AS type, title, due_date
-       FROM project_milestone
-       WHERE due_date IS NOT NULL AND due_date BETWEEN NOW() AND NOW() + INTERVAL '30 days'
-       ORDER BY due_date ASC
-       LIMIT 8`
-    ),
-    query<{ id: number; subject: string; sent_at: Date; client_name: string }>(
-      `SELECT e.id, e.subject, e.sent_at, c.name AS client_name
-       FROM crm_email e
-       JOIN crm_client c ON c.id = e.crm_client_id
-       WHERE e.direction = 'inbound' AND e.is_read = false
-       ORDER BY e.sent_at DESC
-       LIMIT 8`
-    ),
-  ])
-
-  return {
-    revenueCents: Number(revenue.rows[0]?.total_cents || 0),
-    projects: Number(projects.rows[0]?.count || 0),
-    clients: Number(clients.rows[0]?.count || 0),
-    tasks: Number(tasks.rows[0]?.count || 0),
-    deadlines: Number(deadlines.rows[0]?.count || 0),
-    unreadMessages: Number(unreadMessages.rows[0]?.count || 0),
-    pendingContracts: Number(pendingContracts.rows[0]?.count || 0),
-    invoices: Number(invoices.rows[0]?.count || 0),
-    upcomingDeadlines: upcomingDeadlines.rows,
-    latestUnreadMessages: latestUnreadMessages.rows,
+    return {
+      revenueCents: Number(revenue.rows[0]?.total_cents || 0),
+      projects: Number(projects.rows[0]?.count || 0),
+      clients: Number(clients.rows[0]?.count || 0),
+      tasks: Number(tasks.rows[0]?.count || 0),
+      deadlines: Number(deadlines.rows[0]?.count || 0),
+      unreadMessages: Number(unreadMessages.rows[0]?.count || 0),
+      pendingContracts: Number(pendingContracts.rows[0]?.count || 0),
+      invoices: Number(invoices.rows[0]?.count || 0),
+      upcomingDeadlines: upcomingDeadlines.rows,
+      latestUnreadMessages: latestUnreadMessages.rows,
+    }
+  } catch (error: unknown) {
+    console.error('Error fetching executive dashboard:', error)
+    throw error
   }
 }
 

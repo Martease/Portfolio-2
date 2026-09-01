@@ -133,7 +133,7 @@ export default function DiscoveryForm() {
       onSubmit={handleSubmit(async (data) => {
         try {
           await onSubmit(data)
-        } catch (error) {
+        } catch (error: unknown) {
           const message = error instanceof Error ? error.message : 'Failed to submit request.'
           setSubmitError(message)
         }

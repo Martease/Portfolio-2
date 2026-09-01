@@ -9,6 +9,20 @@ export interface ServiceOffer {
   platforms?: string // Added to show your expertise
 }
 
+// Validate service amounts are within acceptable ranges
+const validateServiceAmounts = (services: ServiceOffer[]): void => {
+  const MIN_AMOUNT = 100 // $1.00 in cents
+  const MAX_AMOUNT = 50_000_000 // $500,000.00 in cents
+
+  services.forEach((service) => {
+    if (!Number.isInteger(service.amount) || service.amount < MIN_AMOUNT || service.amount > MAX_AMOUNT) {
+      throw new Error(
+        `Invalid service amount for "${service.title}": ${service.amount}. Must be between ${MIN_AMOUNT} and ${MAX_AMOUNT} cents.`
+      )
+    }
+  })
+}
+
 export const serviceCatalog: ServiceOffer[] = [
   {
     title: 'Landing Pages',
@@ -51,6 +65,9 @@ export const serviceCatalog: ServiceOffer[] = [
     platforms: 'All Platforms',
   },
 ]
+
+// Validate all service amounts at load time
+validateServiceAmounts(serviceCatalog)
 
 export const servicesForCards = serviceCatalog.filter((service) => service.includeInServices)
 

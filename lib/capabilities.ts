@@ -65,10 +65,21 @@ function toCapability(row: DbClientCapabilityRow): Capability {
   }
 }
 
+/**
+ * Generates a new capability token with cryptographically secure random bytes
+ * @returns Token string starting with 'cap_' prefix
+ */
 export function generateCapabilityToken() {
   return `${TOKEN_PREFIX}${randomBytes(TOKEN_BYTES).toString('base64url')}`
 }
 
+/**
+ * Hashes a capability token using HMAC-SHA256 with environment pepper
+ * Used to safely store tokens in database
+ * @param token - The capability token to hash
+ * @returns Hex-encoded hash
+ * @throws Error if token format is invalid
+ */
 export function hashCapabilityToken(token: string) {
   if (!token.startsWith(TOKEN_PREFIX) || token.length < TOKEN_PREFIX.length + 32) {
     throw new Error('Invalid capability token format')
@@ -77,10 +88,21 @@ export function hashCapabilityToken(token: string) {
   return createHmac('sha256', capabilityPepper()).update(token).digest('hex')
 }
 
+/**
+ * Creates a capability audit subject string for logging
+ * @param capabilityId - The capability ID
+ * @returns Audit subject for logging
+ */
 export function capabilityAuditSubject(capabilityId: string) {
   return `capability:${capabilityId}`
 }
 
+/**
+ * Extracts capability token from request headers or cookies
+ * Checks Authorization: Bearer header first, then capability_token cookie
+ * @param req - Request with headers and cookies
+ * @returns Token string if found, undefined otherwise
+ */
 export function extractCapabilityToken(req: Pick<NextApiRequest, 'headers' | 'cookies'>) {
   const authorization = req.headers.authorization
   if (typeof authorization === 'string' && authorization.startsWith('Bearer ')) {
@@ -90,6 +112,12 @@ export function extractCapabilityToken(req: Pick<NextApiRequest, 'headers' | 'co
   return req.cookies.capability_token || undefined
 }
 
+/**
+ * Creates a new capability token in the database
+ * @param input - Capability creation parameters including contract, scopes, and expiration
+ * @returns Object with token (plaintext) and capability metadata
+ * @throws Error if input validation fails
+ */
 export async function createCapability(input: CreateCapabilityInput) {
   const scopes = normalizeScopes(input.scopes)
   const contractId = input.contractId.trim()

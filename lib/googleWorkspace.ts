@@ -65,10 +65,21 @@ const getGoogleClients = async (): Promise<GoogleClients | null> => {
 
 const safeName = (value: string) => value.replace(/[\\/:*?"<>|]+/g, ' ').trim()
 
+/**
+ * Escapes special characters in Google Drive query strings
+ * Google Drive uses single quotes and backslashes as escape characters
+ */
+const escapeGoogleDriveQuery = (value: string): string => {
+  // Escape backslashes first, then single quotes
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+}
+
 const findFolder = async (drive: any, parentId: string, name: string) => {
-  const escapedName = name.replace(/'/g, "\\'")
+  const escapedName = escapeGoogleDriveQuery(name)
+  const escapedParentId = escapeGoogleDriveQuery(parentId)
+  
   const result = await drive.files.list({
-    q: `name = '${escapedName}' and '${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    q: `name = '${escapedName}' and '${escapedParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: 'files(id, name)',
     pageSize: 1,
   })
@@ -105,8 +116,9 @@ const shareFileWithClient = async (drive: any, fileId: string, email?: string) =
       },
       sendNotificationEmail: false,
     })
-  } catch (error) {
-    console.error('Failed to share Google file with client:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Failed to share Google file with client:', errorMessage)
   }
 }
 

@@ -25,7 +25,7 @@ const About = () => {
       }
 
       window.location.href = data.url
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating checkout session:', error)
       const message = error instanceof Error ? error.message : 'Failed to initiate checkout. Please try again.'
       alert(message)

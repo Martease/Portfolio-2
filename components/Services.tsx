@@ -27,7 +27,7 @@ const Services = () => {
       }
 
       throw new Error('Checkout session did not return a redirect URL.');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating checkout session:', error);
       const message = error instanceof Error ? error.message : 'Failed to initiate checkout. Please try again.';
       alert(message);

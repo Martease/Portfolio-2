@@ -1,5 +1,13 @@
 import { query } from './db'
 
+/**
+ * Checks if an action is within rate limit boundaries
+ * Uses token bucket algorithm stored in PostgreSQL with sliding window
+ * @param params.scope - Unique identifier for the rate limit scope (e.g., "user:123:action")
+ * @param params.windowMs - Time window in milliseconds (will be clamped to 1s-24h)
+ * @param params.max - Maximum allowed requests in the window (will be clamped to 1-10000)
+ * @returns Object with allowed boolean, current count, and reset time
+ */
 export async function checkRateLimit(params: {
   scope: string
   windowMs: number

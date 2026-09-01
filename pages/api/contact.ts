@@ -78,6 +78,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(400).json({ message: 'name, email, and message are required' })
   }
 
+  if (name.trim().length > 120) {
+    return res.status(400).json({ message: 'Name must not exceed 120 characters' })
+  }
+
+  if (email.trim().length > 200) {
+    return res.status(400).json({ message: 'Email must not exceed 200 characters' })
+  }
+
+  if (message.trim().length > 5000) {
+    return res.status(400).json({ message: 'Message must not exceed 5000 characters' })
+  }
+
   if (!isValidEmail(email)) {
     return res.status(400).json({ message: 'A valid email is required' })
   }
@@ -127,8 +139,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     })
 
     return res.status(200).json({ message: 'Message sent successfully.' })
-  } catch (error) {
-    console.error('Contact email send failed:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Contact email send failed:', errorMessage)
     return res.status(500).json({ message: 'Failed to send message. Please try again later.' })
   }
 }

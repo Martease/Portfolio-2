@@ -30,7 +30,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const expiresAt = new Date(Date.now() + RESET_EXPIRY_MINUTES * 60 * 1000)
   await createPasswordReset({ userId: String(user.id), token, expiresAt })
 
-  const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const appUrl = process.env.NEXTAUTH_URL
+  if (!appUrl) {
+    console.error('NEXTAUTH_URL not configured')
+    return res.status(500).json({ message: 'Server misconfigured. Please try again later.' })
+  }
   const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`
 
   const smtpHost = process.env.SMTP_HOST
@@ -56,11 +60,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         subject: 'Reset your Mamvo Labs password',
         text: `Reset your password using this link (valid for ${RESET_EXPIRY_MINUTES} minutes): ${resetUrl}`,
       })
-    } catch (error) {
-      console.error('Failed to send password reset email:', error)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('Failed to send password reset email:', errorMessage)
     }
   } else {
-    console.info('Password reset URL (SMTP not configured):', resetUrl)
+    console.warn('SMTP not configured - password reset email could not be sent')
   }
 
   return res.status(200).json(genericResponse)

@@ -84,7 +84,6 @@ export default function LoginPage() {
 
           <div className="mt-5 flex flex-wrap gap-3 text-sm text-brand-slate">
             <a href="/forgot-password" className="text-brand-ember">Forgot password?</a>
-            <a href="/forgot-password" className="text-brand-ember">Forgot password?</a>
           </div>
         </SurfaceCard>
       </main>

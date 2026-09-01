@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { consumePasswordResetToken, updateUserPassword } from '../../../lib/userStore'
+import { isValidPassword, PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS } from '../../../lib/config'
 
 type ResetBody = {
   token?: string
@@ -17,8 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(400).json({ message: 'token and password are required' })
   }
 
-  if (password.length < 8) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters long.' })
+  if (password.length < PASSWORD_MIN_LENGTH || !isValidPassword(password)) {
+    return res.status(400).json({ message: PASSWORD_REQUIREMENTS })
   }
 
   const reset = await consumePasswordResetToken(token)
