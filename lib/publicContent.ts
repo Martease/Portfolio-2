@@ -1,46 +1,39 @@
 export const processSteps = [
   {
     title: 'Discover',
-    detail:
-      'Clarify business goals, user constraints, and technical realities before writing implementation code.',
+    detail: 'Talk through your goals, audience, content, and practical requirements before work begins.',
   },
   {
     title: 'Design',
-    detail:
-      'Create intentional flows, messaging hierarchy, and component-level patterns that support conversion.',
+    detail: 'Shape the visual direction, page structure, and responsive experience around your business.',
   },
   {
     title: 'Build',
-    detail:
-      'Ship robust full-stack features with maintainable structure, tested integrations, and thoughtful defaults.',
+    detail: 'Develop the website and agreed functionality, keeping usability and maintainability in view.',
   },
   {
-    title: 'Iterate',
-    detail:
-      'Use usage and performance signals to improve outcomes over time without sacrificing reliability.',
+    title: 'Launch',
+    detail: 'Review the finished site together, prepare it for launch, and make sure the details are in place.',
+  },
+  {
+    title: 'Support',
+    detail: 'Get help with updates and improvements as your website and business continue to grow.',
   },
 ]
 
 export const currentFocusItems = [
-  'Composable product architecture for service-first businesses',
-  'Performance and conversion improvements for existing websites',
-  'Automation workflows that remove repetitive operational tasks',
-]
-
-export const testimonials = [
   {
-    quote:
-      'Bycra transformed our web presence into something that finally reflects our level of professionalism. We started getting better-qualified inbound leads within weeks.',
-    person: 'Operations Lead, Home Services Brand',
+    title: 'High-Performing Websites',
+    description:
+      'Purpose-built digital experiences centered on speed, usability, clear communication, and thoughtful user experiences.',
   },
   {
-    quote:
-      'The development process was clear, organized, and fast. Every recommendation tied directly to business outcomes, not just visual preference.',
-    person: 'Founder, Creative Agency',
+    title: 'Custom Web Applications',
+    description: 'Tailored web tools, portal features, and integrations that solve specific operational problems.',
   },
   {
-    quote:
-      'Strong technical execution and great communication. The final product is easier for our team to maintain and scale.',
-    person: 'Product Owner, B2B SaaS Team',
+    title: 'Workflow Automation',
+    description:
+      'Connecting systems and streamlining repetitive business tasks to save time and improve operational efficiency.',
   },
 ]

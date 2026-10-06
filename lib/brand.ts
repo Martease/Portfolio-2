@@ -5,14 +5,15 @@ export type NavItem = {
 }
 
 export const brandFoundation = {
-  companyName: 'Bycra',
-  mission: 'We transform ideas into meaningful digital experiences through thoughtful design, modern technology, and intentional craftsmanship.',
-  methodology:'How do we accomplish our mission? Learn -> Build -> Create -> Share',
-  vision:  'Inspiring others to creativly tell their story.',
+  companyName: 'Martease Martin Design Dev',
+  mission:
+    'I design and build modern websites that help businesses establish credibility, communicate clearly, and create better experiences for their customers.',
+  methodology: 'Discover -> Design -> Build -> Launch -> Support',
+  vision: 'A thoughtful, independent web design and development practice led by Martease Martin.',
   tagline: 'Architecting Creative Stories.',
   logo: {
     markSrc: '/assets/images/IMG_0942.PNG',
-    alt: 'Bycra logo',
+    alt: 'Portrait of Martease Martin',
     placement: ['header-left', 'favicon'],
   },
   palette: {

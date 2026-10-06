@@ -17,7 +17,7 @@ const storyBlocks = [
   },
   {
     title: 'Software Engineering',
-    body: 'Engineering became the medium where structure, creativity, and business impact meet. I build full-stack products that are clean, reliable, and measurable.',
+    body: 'I combine visual design and practical development to build thoughtful, clear, and dependable websites for businesses.',
   },
   {
     title: 'Philosophy',
@@ -25,7 +25,7 @@ const storyBlocks = [
   },
   {
     title: 'Mission', 
-    body: 'Help founders and operators turn complex ideas into dependable digital systems that create momentum and long-term value.',
+    body: 'Help businesses communicate clearly online through thoughtful websites and practical technical problem-solving.',
   },
 ]
 
@@ -35,9 +35,9 @@ export default function AboutPage() {
       <Header />
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
         <SectionHeading
-          eyebrow="About"
-          title="From trade discipline to product engineering"
-          description="Bycra is built on execution discipline, business ownership, and modern software engineering craft."
+          eyebrow="About Martease"
+          title="From hands-on work to thoughtful digital experiences"
+          description="I’m Martease Martin, a web designer and developer who brings an ownership mindset to building clear, dependable websites for businesses."
           align="left"
         />
 
