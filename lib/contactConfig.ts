@@ -1,8 +1,3 @@
-const DEFAULT_CONTACT_EMAIL = 'contact@mamvolabs.com'
+import { DEFAULT_CONTACT_EMAIL } from './config'
 
-export const CONTACT_EMAIL = process.env.CONTACT_EMAIL || (() => {
-  if (process.env.NODE_ENV === 'production' && !process.env.CONTACT_EMAIL) {
-    throw new Error('CONTACT_EMAIL environment variable is required in production')
-  }
-  return DEFAULT_CONTACT_EMAIL
-})()
+export const CONTACT_EMAIL = process.env.CONTACT_EMAIL || DEFAULT_CONTACT_EMAIL

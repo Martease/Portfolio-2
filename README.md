@@ -38,7 +38,7 @@ This repository demonstrates a full-stack Next.js setup with frontend pages, API
    - `SMTP_PORT` (SMTP server port, e.g. `587`)
    - `SMTP_USER` (SMTP username or sender address)
    - `SMTP_PASS` (SMTP password or app password)
-   - `CONTACT_EMAIL` (optional override for contact inbox; defaults to `the_dev_op@outlook.com`)
+   - `CONTACT_EMAIL` (optional override for contact inbox; defaults to `DEFAULT_CONTACT_EMAIL` in `lib/config.ts`, including in production)
    - `CONTACT_RATE_LIMIT_WINDOW_MS` (optional; default `600000`)
    - `CONTACT_RATE_LIMIT_MAX` (optional; default `5`)
    - `CONTACT_MIN_SUBMIT_MS` (optional; default `1500`)
@@ -58,6 +58,12 @@ This repository demonstrates a full-stack Next.js setup with frontend pages, API
    ```bash
    npm run dev
    ```
+
+## Netlify deployment configuration
+
+Configure environment variables in the Netlify project's environment settings. Set `CONTACT_EMAIL` in both the Builds and Functions scopes if you want to override the default inbox: it is used by the statically generated contact page and by the email API routes. Missing `CONTACT_EMAIL` uses the existing application default and does not prevent production page data collection.
+
+Set a securely generated `NEXTAUTH_SECRET` in the Functions scope before using production authentication. The existing development fallback is not safe for production sessions; this warning is separate from the contact page build failure. Do not commit secrets to the repository. Configure `NEXTAUTH_URL` for the deployed site's origin and the SMTP variables in the Functions scope for contact form delivery. Trigger a new deploy after updating environment settings.
 
 ## 🧱 Infrastructure (Phase 5 / Epic 18)
 - Prisma schema lives at `prisma/schema.prisma`.
