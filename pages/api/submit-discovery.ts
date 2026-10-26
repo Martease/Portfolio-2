@@ -7,9 +7,11 @@ import { prisma } from '../../lib/prisma'
 import { checkRateLimit } from '../../lib/rateLimitStore'
 import { formatServiceTypeLabel } from '../../lib/serviceTypeLabels'
 import { DiscoveryFormSchema } from '../../lib/types'
+import { InquirySchema, inquiryToDiscovery } from '../../lib/inquiry'
 
 type SubmitDiscoveryResponse = {
   message: string
+  accepted?: boolean
 }
 
 type DiscoveryRequestBody = {
@@ -64,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   // Hidden field should remain empty for legitimate human submissions.
   if (typeof antiSpam.company === 'string' && antiSpam.company.trim().length > 0) {
-    return res.status(200).json({ message: 'Discovery request submitted successfully.' })
+    return res.status(200).json({ message: 'Discovery request submitted successfully.', accepted: false })
   }
 
   const minSubmitMs = parsePositiveInt(process.env.DISCOVERY_MIN_SUBMIT_MS, DEFAULT_MIN_SUBMIT_MS)
@@ -85,12 +87,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(429).json({ message: 'Too many requests. Please try again later.' })
   }
 
-  const parsed = DiscoveryFormSchema.safeParse(rawPayload)
+  const isInquiry = 'inquiryVersion' in rawPayload
+  const parsed = isInquiry ? InquirySchema.safeParse(rawPayload) : DiscoveryFormSchema.safeParse(rawPayload)
   if (!parsed.success) {
     return res.status(400).json({ message: 'Invalid discovery form submission.' })
   }
 
-  const data = parsed.data
+  const data = 'inquiryVersion' in parsed.data ? inquiryToDiscovery(parsed.data) : parsed.data
   const serviceTypeLabel = formatServiceTypeLabel(data.serviceType)
 
   try {
@@ -117,12 +120,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const smtpPass = process.env.SMTP_PASS
 
   if (!smtpHost || !smtpPortRaw || !smtpUser || !smtpPass) {
-    return res.status(200).json({ message: 'Discovery request saved, but email service is not configured.' })
+    return res.status(200).json({ accepted: true, message: 'Discovery request saved, but email service is not configured.' })
   }
 
   const smtpPort = Number(smtpPortRaw)
   if (!Number.isInteger(smtpPort) || smtpPort <= 0) {
-    return res.status(200).json({ message: 'Discovery request saved, but email service port is invalid.' })
+    return res.status(200).json({ accepted: true, message: 'Discovery request saved, but email service port is invalid.' })
   }
 
   const transporter = nodemailer.createTransport({
@@ -157,8 +160,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Discovery email send failed:', errorMessage)
-    return res.status(200).json({ message: 'Discovery request saved, but notification email failed.' })
+    return res.status(200).json({ accepted: true, message: 'Discovery request saved, but notification email failed.' })
   }
 
-  return res.status(200).json({ message: 'Discovery request submitted successfully.' })
+  return res.status(200).json({ accepted: true, message: 'Discovery request submitted successfully.' })
 }
