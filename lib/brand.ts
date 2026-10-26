@@ -12,8 +12,8 @@ export const brandFoundation = {
   vision: 'A thoughtful, independent web design and development practice led by Martease Martin.',
   tagline: 'Architecting Creative Stories.',
   logo: {
-    markSrc: '/assets/images/IMG_0942.PNG',
-    alt: 'Portrait of Martease Martin',
+    markSrc: '/assets/images/martease-design-dev-logo.jpeg',
+    alt: 'Martease Martin Design Dev logo',
     placement: ['header-left', 'favicon'],
   },
   palette: {
