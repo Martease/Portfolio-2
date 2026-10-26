@@ -87,7 +87,9 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-3" aria-label={`${brandFoundation.companyName} home`}>
           <img
             src={brandFoundation.logo.markSrc}
-            className="h-12 w-12 rounded-full border border-brand-cloud object-cover"
+            width={72}
+            height={48}
+            className="h-12 w-[72px] shrink-0 object-contain"
             alt={brandFoundation.logo.alt}
           />
           <div className="hidden sm:block">

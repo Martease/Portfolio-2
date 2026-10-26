@@ -7,7 +7,7 @@ import { brandFoundation } from '../lib/brand'
 import { featuredProjects } from '../lib/portfolioData'
 import { currentFocusItems, processSteps } from '../lib/publicContent'
 import Link from 'next/link'
-import Head from 'next/head'
+import PublicMetadata from '../components/PublicMetadata'
 
 export default function Home() {
   const services = [
@@ -19,7 +19,7 @@ export default function Home() {
     {
       title: 'Website Development',
       description:
-        'Clean, responsive website builds using modern web technologies such as Next.js and React, with custom development when the project calls for it.',
+        'Clean, responsive website builds using platforms such as Wix, WordPress, and Squarespace, along with custom development when the project calls for it.',
     },
     {
       title: 'Custom Functionality',
@@ -35,18 +35,10 @@ export default function Home() {
 
   return (
     <div className="text-brand-ink">
-      <Head>
-        <title>Martease Martin Design Dev | Web Designer &amp; Developer</title>
-        <meta
-          name="description"
-          content="Martease Martin is a freelance web designer and developer creating thoughtful, modern business websites that communicate clearly and serve your customers."
-        />
-        <meta property="og:title" content="Martease Martin Design Dev | Web Designer & Developer" />
-        <meta
-          property="og:description"
-          content="Thoughtful web design and development for businesses, led by Martease Martin."
-        />
-      </Head>
+      <PublicMetadata
+        title="Bycra | Web Design & Development"
+        description="Bycra creates thoughtful, modern business websites through purposeful web design and development. Led by designer and developer Martease Martin."
+      />
       <Header />
       <main id="home" className="pt-10 sm:pt-14">
         <SectionShell className="py-20 sm:py-24" containerClassName="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
@@ -58,7 +50,8 @@ export default function Home() {
               <h1 className="mt-4 max-w-3xl font-display text-4xl font-semibold leading-tight text-brand-ink sm:text-6xl">
                 Web Design &amp; Development Built Around Your Business.
               </h1>
-              <p className="mt-5 max-w-2xl text-lg text-brand-slate">{brandFoundation.mission}</p>
+              <p className="mt-5 font-display text-xl text-brand-ink">{brandFoundation.tagline}</p>
+              <p className="mt-3 max-w-2xl text-lg text-brand-slate">{brandFoundation.mission}</p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   href="/contact"
@@ -78,11 +71,13 @@ export default function Home() {
             <Reveal delayMs={130}>
               <SurfaceCard className="bg-gradient-to-br from-brand-sand to-white p-8">
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand-slate">The approach</p>
-                <p className="mt-3 text-lg font-semibold text-brand-ink">{brandFoundation.tagline}</p>
+                <p className="mt-3 text-lg font-semibold text-brand-ink">Design + development, working together.</p>
                 <img
-                  src="/assets/images/Background.png.jpeg"
+                  src="/assets/images/Web%20dev.png"
                   alt="Illustration of a computer monitor displaying code"
-                  className="hero-image-float mt-6 h-60 w-full rounded-2xl object-cover"
+                  width={400}
+                  height={240}
+                  className="hero-image-float motion-reduce:animate-none mt-6 h-60 w-full rounded-2xl bg-white object-contain p-6"
                 />
               </SurfaceCard>
             </Reveal>
@@ -103,7 +98,8 @@ export default function Home() {
                     <img src={project.heroImage} alt={project.title} className="h-48 w-full rounded-2xl object-cover" />
                     <h3 className="mt-5 font-display text-2xl text-brand-ink">{project.title}</h3>
                     <p className="mt-2 text-brand-slate">{project.overview}</p>
-                    <p className="mt-3 text-sm text-brand-slate">{project.solution}</p>
+                    <p className="mt-3 text-sm text-brand-slate"><span className="font-semibold text-brand-ink">The need:</span> {project.problem}</p>
+                    <p className="mt-3 text-sm text-brand-slate"><span className="font-semibold text-brand-ink">Design &amp; development:</span> {project.solution}</p>
                     <ul className="mt-4 flex flex-wrap gap-2" aria-label={`${project.title} technologies`}>
                       {project.techStack.map((technology) => (
                         <li key={technology} className="rounded-full bg-brand-sand px-3 py-1 text-xs text-brand-slate">
@@ -138,6 +134,9 @@ export default function Home() {
               ))}
             </div>
             <Reveal delayMs={180}>
+              <p className="mx-auto mt-8 max-w-2xl text-center text-brand-slate">
+                The right platform for the project—from a website platform to a custom build with Next.js and React. We’ll choose around your goals and how you manage your site.
+              </p>
               <div className="mt-8 text-center">
                 <Link
                   href="/contact"
@@ -174,19 +173,18 @@ export default function Home() {
               <SurfaceCard className="grid gap-8 bg-brand-ink p-8 text-white lg:grid-cols-2">
                 <div>
                   <img
-                    src="/assets/images/IMG_0942.PNG"
+                    src="/assets/images/Background.png.jpeg"
                     alt="Portrait of Martease Martin"
                     className="mb-6 h-48 w-48 rounded-2xl object-cover"
                   />
-                  <SectionHeading
-                    eyebrow="About Martease"
-                    title="Design, development, and an ownership mindset."
-                    align="left"
-                  />
+                  <p className="font-mono text-xs uppercase tracking-[0.22em] text-slate-200">About Martease</p>
+                  <h2 className="mt-3 font-display text-3xl font-semibold text-white sm:text-4xl">
+                    Design, development, and an ownership mindset.
+                  </h2>
                 </div>
                 <div className="space-y-4 text-slate-200">
                   <p>
-                    Hi, I’m Martease Martin—a web designer and developer focused on building thoughtful digital experiences for businesses.
+                    Hi, I’m Martease Martin, the designer and developer behind Bycra. I build thoughtful digital experiences for businesses.
                   </p>
                   <p>
                     I approach every project with an ownership mindset shaped by real-world business operations, design, and software development. I combine thoughtful visual design with practical development to create websites that are clear, dependable, maintainable, and aligned with the goals of the business behind them.
@@ -224,7 +222,7 @@ export default function Home() {
                 <p className="font-mono text-xs uppercase tracking-[0.22em] text-orange-100">Have a project in mind?</p>
                 <h2 className="mt-3 font-display text-3xl sm:text-4xl">Let’s build a website that works for your business.</h2>
                 <p className="mt-3 max-w-2xl text-orange-100">
-                  Share a little about your goals and what you need. We can start with a conversation and find the right next step.
+                  Share your goals through a project inquiry. We’ll start with a discovery conversation, then agree on a proposal, contract, and payment before project kickoff.
                 </p>
                 <div className="mt-7">
                   <Link

@@ -1,3 +1,4 @@
+import PublicMetadata from '../components/PublicMetadata'
 import Link from 'next/link'
 import Header from '../components/Header'
 import SectionHeading from '../components/ui/SectionHeading'
@@ -7,10 +8,14 @@ import { portfolioProjects } from '../lib/portfolioData'
 export default function PortfolioPage() {
   return (
     <div className="min-h-screen text-brand-ink">
+      <PublicMetadata
+        title="Bycra Portfolio | Web Design & Development Work"
+        description="Explore Bycra’s website design and development portfolio, with project context, creative direction, and technical choices for real businesses."
+      />
       <Header />
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
         <SectionHeading
-          eyebrow="Portfolio"
+          eyebrow="Bycra Portfolio"
           title="Project case studies"
           description="Each project includes context, technical choices, and outcomes to show how strategy translates into shipped software."
           align="left"
