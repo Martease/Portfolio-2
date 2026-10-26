@@ -1,3 +1,4 @@
+import PublicMetadata from '../components/PublicMetadata'
 import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../components/Header'
@@ -243,20 +244,11 @@ export default function ServicesPage() {
 
   return (
     <div className={styles.page}>
+      <PublicMetadata
+        title="Web Design & Creative Services | Bycra"
+        description="Discover Bycra’s collaborative approach to website design, development, e-commerce, and website care. Thoughtful design, clear communication, and a process built around your business."
+      />
       <Head>
-        <title>Web Design & Creative Services | Bycra</title>
-        <meta
-          name="description"
-          content="Discover Bycra’s collaborative approach to website design, development, e-commerce, and website care. Thoughtful design, clear communication, and a process built around your business."
-        />
-        <meta
-          property="og:title"
-          content="Web Design & Creative Services | Bycra"
-        />
-        <meta
-          property="og:description"
-          content="More than a website. A thoughtful creative experience built around you and your business."
-        />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"

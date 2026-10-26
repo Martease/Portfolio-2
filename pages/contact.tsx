@@ -1,3 +1,4 @@
+import PublicMetadata from '../components/PublicMetadata'
 import Header from '../components/Header'
 import DiscoveryForm from '../components/DiscoveryForm'
 import SectionHeading from '../components/ui/SectionHeading'
@@ -7,10 +8,14 @@ import { CONTACT_EMAIL } from '../lib/contactConfig'
 export default function ContactPage() {
   return (
     <div className="min-h-screen text-brand-ink">
+      <PublicMetadata
+        title="Contact Bycra | Start a Project"
+        description="Start a project with Bycra. Share your business goals and website needs to begin a thoughtful design and development conversation."
+      />
       <Header />
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
         <SectionHeading
-          eyebrow="Contact"
+          eyebrow="Contact Bycra"
           title="Lets discuss your next build"
           description="Share your goals, timeline, and current blockers. You will get a practical next-step response."
           align="left"

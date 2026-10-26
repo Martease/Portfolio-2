@@ -1,3 +1,4 @@
+import PublicMetadata from '../components/PublicMetadata'
 import Header from '../components/Header'
 import SectionHeading from '../components/ui/SectionHeading'
 import SurfaceCard from '../components/ui/SurfaceCard'
@@ -32,12 +33,16 @@ const storyBlocks = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen text-brand-ink">
+      <PublicMetadata
+        title="About Bycra | Meet the Designer"
+        description="Meet Martease Martin, the designer and developer behind Bycra, bringing an ownership mindset to thoughtful websites for businesses."
+      />
       <Header />
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
         <SectionHeading
-          eyebrow="About Martease"
+          eyebrow="About Bycra"
           title="From hands-on work to thoughtful digital experiences"
-          description="I’m Martease Martin, a web designer and developer who brings an ownership mindset to building clear, dependable websites for businesses."
+          description="I’m Martease Martin, the designer and developer behind Bycra. I bring an ownership mindset to building clear, dependable websites for businesses."
           align="left"
         />
 

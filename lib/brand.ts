@@ -5,15 +5,15 @@ export type NavItem = {
 }
 
 export const brandFoundation = {
-  companyName: 'Martease Martin Design Dev',
+  companyName: 'Bycra',
   mission:
     'I design and build modern websites that help businesses establish credibility, communicate clearly, and create better experiences for their customers.',
   methodology: 'Discover -> Design -> Build -> Launch -> Support',
-  vision: 'A thoughtful, independent web design and development practice led by Martease Martin.',
+  vision: 'Bycra is an independent web design and development practice led by Martease Martin.',
   tagline: 'Architecting Creative Stories.',
   logo: {
     markSrc: '/assets/images/martease-design-dev-logo.jpeg',
-    alt: 'Martease Martin Design Dev logo',
+    alt: 'Bycra logo',
     placement: ['header-left', 'favicon'],
   },
   palette: {

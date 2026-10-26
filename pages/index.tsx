@@ -7,7 +7,7 @@ import { brandFoundation } from '../lib/brand'
 import { featuredProjects } from '../lib/portfolioData'
 import { currentFocusItems, processSteps } from '../lib/publicContent'
 import Link from 'next/link'
-import Head from 'next/head'
+import PublicMetadata from '../components/PublicMetadata'
 
 export default function Home() {
   const services = [
@@ -35,18 +35,10 @@ export default function Home() {
 
   return (
     <div className="text-brand-ink">
-      <Head>
-        <title>Martease Martin Design Dev | Web Designer &amp; Developer</title>
-        <meta
-          name="description"
-          content="Martease Martin is a freelance web designer and developer creating thoughtful, modern business websites that communicate clearly and serve your customers."
-        />
-        <meta property="og:title" content="Martease Martin Design Dev | Web Designer & Developer" />
-        <meta
-          property="og:description"
-          content="Thoughtful web design and development for businesses, led by Martease Martin."
-        />
-      </Head>
+      <PublicMetadata
+        title="Bycra | Web Design & Development"
+        description="Bycra creates thoughtful, modern business websites through purposeful web design and development. Led by designer and developer Martease Martin."
+      />
       <Header />
       <main id="home" className="pt-10 sm:pt-14">
         <SectionShell className="py-20 sm:py-24" containerClassName="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
@@ -192,7 +184,7 @@ export default function Home() {
                 </div>
                 <div className="space-y-4 text-slate-200">
                   <p>
-                    Hi, I’m Martease Martin—a web designer and developer focused on building thoughtful digital experiences for businesses.
+                    Hi, I’m Martease Martin, the designer and developer behind Bycra. I build thoughtful digital experiences for businesses.
                   </p>
                   <p>
                     I approach every project with an ownership mindset shaped by real-world business operations, design, and software development. I combine thoughtful visual design with practical development to create websites that are clear, dependable, maintainable, and aligned with the goals of the business behind them.

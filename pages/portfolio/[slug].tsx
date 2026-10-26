@@ -1,3 +1,4 @@
+import PublicMetadata from '../../components/PublicMetadata'
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import Link from 'next/link'
 import Header from '../../components/Header'
@@ -11,6 +12,10 @@ export default function PortfolioProjectPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   return (
     <div className="min-h-screen text-brand-ink">
+      <PublicMetadata
+        title={`${project.title} | Bycra Portfolio`}
+        description={project.overview}
+      />
       <Header />
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
         <Link href="/portfolio" className="font-semibold text-brand-ember">
